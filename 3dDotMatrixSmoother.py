@@ -1,6 +1,7 @@
 import numpy as np
 import math
 import PIL
+
 #import Matplotlib as mpl
 
 #vars:
@@ -42,12 +43,19 @@ def DysplayDots(dots):
     print(m, int(m**-1*23))
     for x in range(int(m**-1*23)+1):
         print(Col(int(x*m+232))+str(x), end=Col(-1)+' ')
+
+def areaTriangle(dots):#[[x, y][x, y][x, y]]
+    return abs(dots[0][0]*(dots[1][1]-dots[2][1]) + dots[1][0]*(dots[2][1]-dots[0][1]) + dots[2][0]*(dots[0][1]-dots[1][1]))
+        
+        
+def findTriangles(dots):
+
         
 #x, y, z
 #A###B##
 ########
 #D###C## operation order --> A, B, C, D
-setPoints = [[-3, 3, 10], [2, 1, 0], [3, -2, 8], [-1, -3, 0], [1, -1, 0], [-2, 2, 2], [0, 0, 5]]
+setPoints = [[-3, 3, 10], [2, 1, 0], [3, -2, 8], [3, -2, 8],[3, -2, 8],[3, -2, 8], [-1, -3, 0], [1, -1, 0], [-2, 2, 2], [0, 0, 5]]
 c = 5.5
 for i1, x in enumerate(setPoints):
     for i2 in range(2):
@@ -86,3 +94,8 @@ for y, _ in enumerate(Dots):
             Dots[y][x] = a
         
 DysplayDots(Dots)
+print(findTriangles(np.array(setPoints)))
+
+
+#find every triangle
+#
