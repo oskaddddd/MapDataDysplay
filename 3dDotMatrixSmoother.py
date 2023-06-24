@@ -1,4 +1,4 @@
-import numpy as np
+#import numpy as np
 import math
 import PIL
 
@@ -22,21 +22,24 @@ def Col(value: int):
     
 
 def DysplayDots(dots):
-    m = 0
+    m = 1
     for y in dots:
+        for x in y:
+            if x != None and x > m: m = x
         
-        if max(y) > m: m = max(y)
+            
     print(m)
     if m != 0: m = 23/m
     #print(m*valueDefaultMatrix, Col(round(m*valueDefaultMatrix))+' ')
     for iy, y in enumerate(dots):
         for ix, dot in enumerate(y):
             #print([ix, iy])
-            if [ix, iy] in [[p[0], p[1]] for p in setPoints]:
-                #print('adasdadadada')
-                print(Col(round(dot*m+232)) +str(dot), end = ' ' + Col(-1))
-                continue
-            print(Col(round(dot*m+232)) +' ', end = ' ' + Col(-1))
+            if dot != None:
+                if [ix, iy] in [[p[0], p[1]] for p in setPoints]:
+                    #print(round(dot*m+232))
+                    print(Col(round(dot*m)+232) +str(round(dot)), end = ' ' + Col(-1))
+                    continue
+                print(Col(round(dot*m)+232) +' ', end = ' ' + Col(-1))
         for _ in range(len(str(valueDefaultMatrix))//3):
             print()
         print()
@@ -45,17 +48,36 @@ def DysplayDots(dots):
         print(Col(int(x*m+232))+str(x), end=Col(-1)+' ')
 
 def areaTriangle(dots):#[[x, y][x, y][x, y]]
+    #print(dots)
     return abs(dots[0][0]*(dots[1][1]-dots[2][1]) + dots[1][0]*(dots[2][1]-dots[0][1]) + dots[2][0]*(dots[0][1]-dots[1][1]))
-        
-        
-def findTriangles(dots):
 
-        
+def insideTriangle(dots, checkpoint):#[[y, x][y, x][y, x]] - [y, x]
+    S = [areaTriangle([dots[0], checkpoint, dots[1]]), areaTriangle([dots[1], checkpoint, dots[2]]), areaTriangle([dots[0], checkpoint, dots[2]])]
+    triS = areaTriangle(dots)
+    return (True if sum(S) == triS else False)   
+    
+    
+def findTriangles(dots):
+    l = len(dots)
+    triOut = []
+    for i1 in range(l):
+        for i2 in range(i1+1, l):
+            for i3 in range(i2+1, l):
+                tri = [dots[i1], dots[i2], dots[i3]]
+                inside = [(insideTriangle(tri, check) if check not in tri else False) for check in dots]
+                #print(inside)
+                if True not in inside:
+                    triOut.append([dots[i1], dots[i2], dots[i3]])
+    return triOut
+
+
+
+       
 #x, y, z
 #A###B##
 ########
-#D###C## operation order --> A, B, C, D
-setPoints = [[-3, 3, 10], [2, 1, 0], [3, -2, 8], [3, -2, 8],[3, -2, 8],[3, -2, 8], [-1, -3, 0], [1, -1, 0], [-2, 2, 2], [0, 0, 5]]
+#D###C## operation order --> A, B, C, D                                                jjj
+setPoints = [[-3, 3, 10], [2, 1, 0], [3, -2, 8], [-1, -3, 0], [1, -1, 0], [-2, 2, 2], [0, 0, 5]]
 c = 5.5
 for i1, x in enumerate(setPoints):
     for i2 in range(2):
@@ -85,17 +107,57 @@ def TestRun(points:list):
                     return out
             out.append(sum(k)/sum(w))
     return out
-
+def TestRunTri(triPoints, pixel):
+    out = []
+    for tri in triPoints:
+        #print('fff', tri, pixel)
+        if insideTriangle(tri, pixel):
+            d = []
+            for i in range(len(tri)):
+                d.append(math.sqrt((pixel[0]-tri[i][0])**2+(pixel[1]-tri[i][1])**2))
+            #print('im alive')
+            #check if point is inside quad
+            
+            w = []
+            k = []
+            for i1 in range(len(tri)):
+                if d[i1] != 0:
+                    w.append(1/d[i1])
+                    #print(w, tri, i1)
+                    k.append(w[len(w)-1]*tri[i1][2])
+                    out.append(sum(k)/sum(w))
+    if len(out) != 0:
+    
+        return sum(out)/len(out)
+    #except Exception as e:
+    #    print(f'{e}\n\n{triPoints}\n\n{pixel}\n\n{out}')
+    #    exit()
+    #
 print(setPoints)
 for y, _ in enumerate(Dots):
     for x in range(len(_)):
         a = TestRun([[x, y]])[0]
         if a != -1:
             Dots[y][x] = a
-        
-DysplayDots(Dots)
-print(findTriangles(np.array(setPoints)))
 
+
+print(insideTriangle([setPoints[0], setPoints[1], setPoints[6]], setPoints[5]))
+#print(findTriangles(np.array(setPoints)))
+#DysplayDots(Dots)
+t = findTriangles(setPoints)
+for x in t:
+    print(x)
+print(len(t))
+for i1, y in enumerate(Dots):
+    for i2, x in enumerate(y):
+        Dots[i1][i2] = TestRunTri(t, [i2, i1])
+
+DysplayDots(Dots)
+for i1, y in enumerate(Dots):
+    for i2, x in enumerate(y):
+        Dots[i1][i2] = TestRun([[i2, i1]])[0]
+#TestRun(setPoints)
+DysplayDots(Dots)
 
 #find every triangle
 #
