@@ -1,6 +1,8 @@
 #import numpy as np
 import math
 import PIL
+from scipy.spatial import Delaunay
+import numpy as np
 
 #import Matplotlib as mpl
 
@@ -69,10 +71,14 @@ def findTriangles(dots):
                 if True not in inside:
                     triOut.append([dots[i1], dots[i2], dots[i3]])
     return triOut
+def ravioliFindTriangles(points):
+    tri = Delaunay(points)
+    triangles = points[tri.simplices]
+    return triangles
 
 
 
-       
+
 #x, y, z
 #A###B##
 ########
@@ -109,26 +115,30 @@ def TestRun(points:list):
     return out
 def TestRunTri(triPoints, pixel):
     out = []
-    for tri in triPoints:
-        #print('fff', tri, pixel)
-        if insideTriangle(tri, pixel):
-            d = []
-            for i in range(len(tri)):
-                d.append(math.sqrt((pixel[0]-tri[i][0])**2+(pixel[1]-tri[i][1])**2))
-            #print('im alive')
-            #check if point is inside quad
-            
-            w = []
-            k = []
-            for i1 in range(len(tri)):
-                if d[i1] != 0:
-                    w.append(1/d[i1])
-                    #print(w, tri, i1)
-                    k.append(w[len(w)-1]*tri[i1][2])
-                    out.append(sum(k)/sum(w))
-    if len(out) != 0:
-    
-        return sum(out)/len(out)
+    if pixel not in [[p[0], p[1]] for p in setPoints]:
+        for tri in triPoints:
+            #print('fff', tri, pixel)
+            if insideTriangle(tri, pixel):
+                d = []
+                for i in range(len(tri)):
+                    d.append(math.sqrt((pixel[0]-tri[i][0])**2+(pixel[1]-tri[i][1])**2))
+                #print('im alive')
+                #check if point is inside quad
+
+                w = []
+                k = []
+                for i1 in range(len(tri)):
+                    if d[i1] != 0:
+                        w.append(1/d[i1])
+                        #print(w, tri, i1)
+                        k.append(w[len(w)-1]*tri[i1][2])
+                        #print(k)
+                        out.append(sum(k)/sum(w))
+        if len(out) != 0:
+        
+            return sum(out)/len(out)
+    else:
+        return setPoints[[[p[0], p[1]] for p in setPoints].index(pixel)][2]
     #except Exception as e:
     #    print(f'{e}\n\n{triPoints}\n\n{pixel}\n\n{out}')
     #    exit()
@@ -144,7 +154,8 @@ for y, _ in enumerate(Dots):
 print(insideTriangle([setPoints[0], setPoints[1], setPoints[6]], setPoints[5]))
 #print(findTriangles(np.array(setPoints)))
 #DysplayDots(Dots)
-t = findTriangles(setPoints)
+#t = findTriangles(setPoints)
+t = ravioliFindTriangles(np.array(setPoints))
 for x in t:
     print(x)
 print(len(t))
