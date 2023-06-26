@@ -95,7 +95,7 @@ def CordSubmit():
     datList[editing-1][0] = selected
     print('GAyyyy', t.split(), datList)
     dat = Label(root, text=f"\n[Picture cords] -- [Real life cords]\nPoint 1:{datList[0][0]} -- {datList[0][1]}\nPoint 2:{datList[1][0]} -- {datList[1][1]}")
-    dat.grid(row=6, column=0)
+    dat.grid(row=1, column=1)
     text.delete("0","end")
     with open('CoordinateCalibration.json', 'w') as f:
         json.dump(datList, f)
@@ -126,7 +126,7 @@ text.grid(row=3, column=0)
 butt.grid(row=4, column=0)
 Im.grid(row=1, column=0)
 butt1.grid(row=5, column=0)
-dat.grid(row=6, column=0)
+dat.grid(row=1, column=1)
 root.bind('<1>',click)
 
 #canva.pack()
