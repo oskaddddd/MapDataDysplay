@@ -4,11 +4,11 @@ import numpy as np
 from tkinter import *
 import json
 
-image = PIL.Image.open('mask.png').convert('RGBA')
+image = PIL.Image.open('mask1.png').convert('RGBA')
 
 #raise the threshold not the entire region is green and lower it if pixels outside the region are green
 threashhold = 100
-
+defjson = [{"GPS": [0, 0], "Pixel" :[0, 0]} for _ in range(2)]
 defImageArr = np.array(image)
 imageArr = defImageArr.copy()
 print("Loaded image into array")
@@ -32,31 +32,49 @@ root.title("Image to real world calibration")
 
 imTK = PIL.ImageTk.PhotoImage(image)
 
-Im = Label(root, image=imTK)
-Info = Label(root, text=f"Enter rl coordinates for selected pixel {0, 0}, seperated by a space")
+Im = Button(root, image=imTK, borderwidth=0, relief=RAISED)
+Info = Label(root, text=f"Enter GPS coordinates for selected pixel {0, 0}, latitude then longitude")
 
 entry = Entry(root, width=40)
 selected = [0, 0]
 editing = 1 #vars 1 or 2
 
 datList = []
-with open('CoordinateCalibration.json', 'r') as f:
-    datList=json.load(f)
+try: 
+    with open('CoordinateCalibration.json', 'r') as f:
+        datList=json.load(f)
+except:
+    with open('CoordinateCalibration.json', 'w') as f:
+        datList=json.dump(defjson, f, indent=1)
+    datList = defjson
 print("Read json data")
-dat = Label(root, text=f"\n[Picture cords] -- [Real life cords]\nPoint 1:{datList[0][0]} -- {datList[0][1]}\nPoint 2:{datList[1][0]} -- {datList[1][1]}")
+dat = Label(root, text=f"\n[Pixel position] -- [GPS]\nPoint 1:{datList[0]['Pixel']} -- {datList[0]['GPS']}\nPoint 2:{datList[1]['Pixel']} -- {datList[1]['GPS']}")
 
-def click(e):
+
+tempSelect = [0, 0]
+def Selected(e):
+    global tempSelect
+
+    tempSelect = [e.x, e.y]
+    print('SELECTED', selected)
+
+    Im['relief'] = RAISED
+
+def click():
     global imTK
     global Im
     global imageArr
     global selected
+
     
-    if e.y < image.size[1] and e.x < image.size[0]:
-        if (defImageArr[e.y-1][e.x-1] == np.array([0, 255, 0, 255])).all():
+    print(f"Registered a click at {selected[0], selected[1]}")
+    if tempSelect[1] < image.size[1] and tempSelect[0] < image.size[0]:
+        Im['relief'] = RAISED
+        if (defImageArr[tempSelect[1]-1][tempSelect[0]-1] == np.array([0, 255, 0, 255])).all():
+            selected = [tempSelect[0]-1, tempSelect[1]-1]
             imageArr = defImageArr.copy()
-            selected = [e.x-1, e.y-1]
-            print(f"Registered a click at {selected}")
-    
+            selected = [selected[0]-1, selected[1]-1]            
+            
         
             red = np.array([255, 0, 0, 255])
             imageArr[selected[1]][selected[0]] = red
@@ -67,45 +85,64 @@ def click(e):
             print("Set pressed pixels to red")
             
             imTK = PIL.ImageTk.PhotoImage(PIL.Image.fromarray(imageArr))
-            Im = Label(root, image=imTK)
-            Info = Label(root, text=f"Enter rl coordinates for selected pixel {selected[0], selected[1]}, seperated by a space, latitude then longitude")
-            Info.grid(row=2, column=0)   
-            Im.grid(row=1, column=0)
+            Im["image"] = imTK
+            
+            Info['text'] = f"Enter GPS coordinates for selected pixel {selected[0], selected[1]}, latitude then longitude"
+            #Info.grid(row=2, column=0)   
+            
             print('Updated Image and Coordinate dysplay')
+
+    print('CLICK', selected)
 
 def CordSubmit():
     global dat
     global datList
     t = entry.get()
-   
-    datList[editing-1][1] = t.split()
-    datList[editing-1][0] = selected
+    a = []
+    if ', ' in t:
+        a = t.split()
+        #print(1, a[0], len(a)-1)
+        a[0] = a[0][:len(a[0])-1]
+        
+    elif ','in t and ' ' not in t:
+        a = [t[:t.index(',')], t[t.index(',')+1:]]
+        #print(2)
+    elif ',' not in t and ' ' in t:
+        a = t.split()
+        #print(3)
+    print('DEBUG', selected) 
+    datList[editing-1]['GPS'] = a
+    datList[editing-1]['Pixel'] = selected
+    print('DEBUG', selected)
     print(f"Read data {t.split()}")
     
-    dat = Label(root, text=f"\n[Picture cords] -- [Real life cords]\nPoint 1:{datList[0][0]} -- {datList[0][1]}\nPoint 2:{datList[1][0]} -- {datList[1][1]}")
-    dat.grid(row=1, column=1)
+    dat['text'] = f"\n[Pixel position] -- [GPS]\nPoint 1:{datList[0]['Pixel']} -- {datList[0]['GPS']}\nPoint 2:{datList[1]['Pixel']} -- {datList[1]['GPS']}"
     print("Dysplayed new data")
     
     with open('CoordinateCalibration.json', 'w') as f:
-        json.dump(datList, f)
+        json.dump(datList, f, indent=1)
     print("Wrote data to file")
     
     entry.delete("0","end")
     print("Cleared entry field")
         
 butt = Button(root, text="Submit coordinates for point 1", command=CordSubmit)
-    
+  
+def Test(e=None):
+    print('GJKLSHGKFJHSDKFHJ')  
 def edit():
     global editing
     global butt
     
+    
     editing = 1 if editing == 2 else 2
     print(f"Changed curent editing point to point {editing}")
-    butt = Button(root, text=f"Submit coordinates for point {editing}", command=CordSubmit)
-    butt.grid(row=4, column=0)
+    butt['text'] = f"Submit coordinates for point {editing}"
+    #butt.grid(row=4, column=0)
     print("Updated button text")
  
 butt1 = Button(root, text=f"Change Point", command=edit)
+Im['command'] = click
 
 Info.grid(row=2, column=0)
 entry.grid(row=3, column=0)
@@ -115,7 +152,8 @@ butt1.grid(row=5, column=0)
 dat.grid(row=1, column=1)
 print("Loaded widgets")
 
-root.bind('<1>',click)
+root.bind('<Button 1>',Selected)
+#root.bind('<ButtonRelease 1>', click)
 
 print("Starting window...")
 root.mainloop()
