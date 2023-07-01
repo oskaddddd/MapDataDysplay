@@ -73,7 +73,7 @@ def click():
         if (defImageArr[tempSelect[1]-1][tempSelect[0]-1] == np.array([0, 255, 0, 255])).all():
             selected = [tempSelect[0]-1, tempSelect[1]-1]
             imageArr = defImageArr.copy()
-            selected = [selected[0]-1, selected[1]-1]            
+            #selected = [selected[0]-1, selected[1]-1]            
             
         
             red = np.array([255, 0, 0, 255])
