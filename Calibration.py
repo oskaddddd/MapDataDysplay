@@ -3,31 +3,34 @@ import PIL.ImageTk
 import numpy as np
 from tkinter import *
 import json
+from screeninfo import get_monitors
 
-image = PIL.Image.open('mask1.png').convert('RGBA')
+monitor = get_monitors()[0]
+monitor = (monitor.width, monitor.height)
 
+print(monitor)
+imageName = ''
+with open('ImageName.txt', 'r') as f:
+    imageName = f.read()
+    imageName = imageName[:imageName.index('.')+1]+'png' \
+    if imageName[imageName.index('.')+1:] != 'png' \
+    else imageName
+
+defImage = PIL.Image.open(imageName).convert('RGBA')
+imageScale = min((monitor[1]-200)/defImage.size[1], (monitor[0]-500)/defImage.size[0])
+print(imageScale, monitor[1], defImage.size[1])
+
+image = defImage.resize((round(defImage.size[0]*imageScale), round(defImage.size[1]*imageScale)))
 #raise the threshold not the entire region is green and lower it if pixels outside the region are green
-threashhold = 100
 defjson = [{"GPS": [0, 0], "Pixel" :[0, 0]} for _ in range(2)]
 defImageArr = np.array(image)
 imageArr = defImageArr.copy()
 print("Loaded image into array")
 
-print("Coloring region green... this might take abit")
-for i1, y in enumerate(defImageArr):
-    for i2, x in enumerate(y):
-        if x[0] < threashhold:
-            defImageArr[i1][i2] = np.array([0, 255, 0, 255])
-        else:
-            defImageArr[i1][i2] = np.array([0, 0, 0, 0])
-imageArr = defImageArr.copy()
-image = PIL.Image.fromarray(imageArr)
-
-print("Colored region green")
 print("Prepearing GUI... This might take abit")
 
 root = Tk()
-root.minsize(image.size[0], image.size[1])
+root.minsize(550, 250)
 root.title("Image to real world calibration")
 
 imTK = PIL.ImageTk.PhotoImage(image)
@@ -70,9 +73,10 @@ def click():
     print(f"Registered a click at {selected[0], selected[1]}")
     if tempSelect[1] < image.size[1] and tempSelect[0] < image.size[0]:
         Im['relief'] = RAISED
-        if (defImageArr[tempSelect[1]-1][tempSelect[0]-1] == np.array([0, 255, 0, 255])).all():
+        if (defImageArr[tempSelect[1]-1][tempSelect[0]-1] == np.array([0, 0, 0, 255])).all():
             selected = [tempSelect[0]-1, tempSelect[1]-1]
-            imageArr = defImageArr.copy()
+            imageArr = np.array(image)
+            
             #selected = [selected[0]-1, selected[1]-1]            
             
         
@@ -87,13 +91,67 @@ def click():
             imTK = PIL.ImageTk.PhotoImage(PIL.Image.fromarray(imageArr))
             Im["image"] = imTK
             
-            Info['text'] = f"Enter GPS coordinates for selected pixel {selected[0], selected[1]}, latitude then longitude"
+            Info['text'] = f"Enter GPS coordinates for selected pixel {round(selected[0]/imageScale), round(selected[1]/imageScale)}, latitude then longitude"
             #Info.grid(row=2, column=0)   
             
             print('Updated Image and Coordinate dysplay')
 
     print('CLICK', selected)
+def resizeImage(e):
+    global imageScale
+    global image
+    global imageArr
+    global imTK
+    global selected
 
+    temp = min((e.height)/defImage.size[1], (e.width)/defImage.size[0])
+    if temp == imageScale:
+        return
+    
+    print(e, imageScale, temp)
+    
+    selected = [round(selected[0] * (temp/imageScale)), round(selected[1] * (temp/imageScale))]
+    image = defImage.resize((round(defImage.size[0]*temp), round(defImage.size[1]*temp)))
+    imageArr = np.array(image)
+
+    red = np.array([255, 0, 0, 255])
+    imageArr[selected[1]][selected[0]] = red
+    imageArr[selected[1]+1][selected[0]] = red
+    imageArr[selected[1]-1][selected[0]] = red
+    imageArr[selected[1]][selected[0]+1] = red
+    imageArr[selected[1]][selected[0]-1] = red
+
+    imTK = PIL.ImageTk.PhotoImage(PIL.Image.fromarray(imageArr))
+    Im["image"] = imTK
+    imageScale = temp
+    
+def moveRight(e):
+    global selected
+    global imTK
+    print('123')
+    t = [selected[0]+1, selected[1]]
+    if t[1] < image.size[1] and t[0] < image.size[0]:
+        Im['relief'] = RAISED
+        if (defImageArr[t[1]-1][t[0]-1] == np.array([0, 0, 0, 255])).all():
+            selected = t
+            imageArr = np.array(image)
+            
+            #selected = [selected[0]-1, selected[1]-1]            
+            
+        
+            red = np.array([255, 0, 0, 255])
+            imageArr[selected[1]][selected[0]] = red
+            imageArr[selected[1]+1][selected[0]] = red
+            imageArr[selected[1]-1][selected[0]] = red
+            imageArr[selected[1]][selected[0]+1] = red
+            imageArr[selected[1]][selected[0]-1] = red
+            print("Set pressed pixels to red")
+            
+            imTK = PIL.ImageTk.PhotoImage(PIL.Image.fromarray(imageArr))
+            Im["image"] = imTK
+            
+            Info['text'] = f"Enter GPS coordinates for selected pixel {round(selected[0]/imageScale), round(selected[1]/imageScale)}, latitude then longitude"
+            #Info.grid(row=2, column=0) 
 def CordSubmit():
     global dat
     global datList
@@ -112,7 +170,7 @@ def CordSubmit():
         #print(3)
     print('DEBUG', selected) 
     datList[editing-1]['GPS'] = a
-    datList[editing-1]['Pixel'] = selected
+    datList[editing-1]['Pixel'] = [round(selected[0]/imageScale), round(selected[1]/imageScale)]
     print('DEBUG', selected)
     print(f"Read data {t.split()}")
     
@@ -154,6 +212,8 @@ print("Loaded widgets")
 
 root.bind('<Button 1>',Selected)
 #root.bind('<ButtonRelease 1>', click)
+#root.bind('<Configure>', resizeImage)
+root.bind('<Right>', moveRight)
 
 print("Starting window...")
 root.mainloop()

@@ -65,7 +65,8 @@ def findTriangles(dots):
     for i1 in range(l):
         for i2 in range(i1+1, l):
             for i3 in range(i2+1, l):
-                tri = [dots[i1], dots[i2], dots[i3]]
+                tri = np.array([dots[i1], dots[i2], dots[i3]])
+                #print(tri)
                 inside = [(insideTriangle(tri, check) if check not in tri else False) for check in dots]
                 #print(inside)
                 if True not in inside:
@@ -83,7 +84,7 @@ def ravioliFindTriangles(points):
 #A###B##
 ########
 #D###C## operation order --> A, B, C, D                                                jjj
-setPoints = [[-3, 3, 10], [2, 1, 0], [3, -2, 8], [-1, -3, 0], [1, -1, 0], [-2, 2, 2], [0, 0, 5]]
+setPoints = [[-3, 3, 10], [2, 1, 0], [3, -2, 0], [-1, -3, 0], [1, -1, 0], [-2, 2, 2], [0, 0, 5]]
 c = 5.5
 for i1, x in enumerate(setPoints):
     for i2 in range(2):

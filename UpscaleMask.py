@@ -1,7 +1,13 @@
 from PIL import Image
 import json
-name = 'mask1.png'
-image = Image.open(name)
+
+imageName = ''
+with open('ImageName.txt', 'r') as f:
+    imageName = f.read()
+    imageName = imageName[:imageName.index('.')+1]+'png' \
+    if imageName[imageName.index('.')+1:] != 'png' \
+    else imageName
+image = Image.open(imageName)
 s = image.size
 
 scale = input('Enter a numebr for how much to upscale. For example if you want to upscale it by 2X, enter - 2: ')
@@ -18,7 +24,7 @@ print('res', image.size)
 a = input(f'Upscaled image from {s} to {image.size}, would you like to keep the changes? y/n:').lower()
 
 if a == 'y':
-    image.save(name)
+    image.save(imageName)
     print('Saved changed')
 else:
     print('Discarded changed')

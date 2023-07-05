@@ -1,2 +1,2 @@
-a = [0, 1, 2, 3, 4, 5, 6, 7]
-print(a*3)
+s = 'abs.jpg'
+print(s[:s.index('.')+1]+'png' if s[s.index('.')+1:] != 'png' else s)
