@@ -4,6 +4,7 @@ import numpy as np
 from tkinter import *
 import json
 from screeninfo import get_monitors
+import time
 
 monitor = get_monitors()[0]
 monitor = (monitor.width, monitor.height)
@@ -124,34 +125,47 @@ def resizeImage(e):
     imTK = PIL.ImageTk.PhotoImage(PIL.Image.fromarray(imageArr))
     Im["image"] = imTK
     imageScale = temp
-    
-def moveRight(e):
+delayReset = 0.1
+delay = time.time()   
+def move(dir):
     global selected
     global imTK
+    global delay
     print('123')
-    t = [selected[0]+1, selected[1]]
-    if t[1] < image.size[1] and t[0] < image.size[0]:
-        Im['relief'] = RAISED
-        if (defImageArr[t[1]-1][t[0]-1] == np.array([0, 0, 0, 255])).all():
-            selected = t
-            imageArr = np.array(image)
-            
-            #selected = [selected[0]-1, selected[1]-1]            
-            
-        
-            red = np.array([255, 0, 0, 255])
-            imageArr[selected[1]][selected[0]] = red
-            imageArr[selected[1]+1][selected[0]] = red
-            imageArr[selected[1]-1][selected[0]] = red
-            imageArr[selected[1]][selected[0]+1] = red
-            imageArr[selected[1]][selected[0]-1] = red
-            print("Set pressed pixels to red")
-            
-            imTK = PIL.ImageTk.PhotoImage(PIL.Image.fromarray(imageArr))
-            Im["image"] = imTK
-            
-            Info['text'] = f"Enter GPS coordinates for selected pixel {round(selected[0]/imageScale), round(selected[1]/imageScale)}, latitude then longitude"
-            #Info.grid(row=2, column=0) 
+    if time.time() >= delay:
+        delay = time.time()+delayReset
+        t = dir
+        if t[1] < image.size[1] and t[0] < image.size[0]:
+            Im['relief'] = RAISED
+            if (defImageArr[t[1]][t[0]] == np.array([0, 0, 0, 255])).all():
+                selected = t
+                imageArr = np.array(image)
+
+                #selected = [selected[0]-1, selected[1]-1]            
+
+
+                red = np.array([255, 0, 0, 255])
+                imageArr[selected[1]][selected[0]] = red
+                imageArr[selected[1]+1][selected[0]] = red
+                imageArr[selected[1]-1][selected[0]] = red
+                imageArr[selected[1]][selected[0]+1] = red
+                imageArr[selected[1]][selected[0]-1] = red
+                print("Set pressed pixels to red")
+
+                imTK = PIL.ImageTk.PhotoImage(PIL.Image.fromarray(imageArr))
+                Im["image"] = imTK
+
+                Info['text'] = f"Enter GPS coordinates for selected pixel {round(selected[0]/imageScale), round(selected[1]/imageScale)}, latitude then longitude"
+                #Info.grid(row=2, column=0) 
+def moveRight(e):
+    move([selected[0]+1, selected[1]])
+def moveLeft(e):
+    move([selected[0]-1, selected[1]])
+def moveUp(e):
+    move([selected[0], selected[1]-1])
+def moveDown(e):
+    move([selected[0], selected[1]+1])
+    
 def CordSubmit():
     global dat
     global datList
@@ -214,6 +228,9 @@ root.bind('<Button 1>',Selected)
 #root.bind('<ButtonRelease 1>', click)
 #root.bind('<Configure>', resizeImage)
 root.bind('<Right>', moveRight)
+root.bind('<Left>', moveLeft)
+root.bind('<Up>', moveUp)
+root.bind('<Down>', moveDown)
 
 print("Starting window...")
 root.mainloop()
