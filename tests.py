@@ -1,2 +1,3 @@
-s = 'abs.jpg'
-print(s[:s.index('.')+1]+'png' if s[s.index('.')+1:] != 'png' else s)
+import numpy as np
+arr = [1, 2, 3]
+print(np.append(arr, 4))

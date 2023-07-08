@@ -57,7 +57,8 @@ for x in data:
     t = {}
     t["Pixel"] = Decode(x["GPS"])
     t["Value"] = x["Value"]
-    mapData.append(t)
+    if t["Pixel"][0] < image.size[0] and t["Pixel"][1] < image.size[1] and t["Pixel"][0] > 0 and t["Pixel"][1] > 0:
+        mapData.append(t)
     print(t)
 print(mapData)
 

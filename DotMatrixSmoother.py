@@ -30,7 +30,7 @@ def DysplayDots(dots):
             if x != None and x > m: m = x
         
             
-    print(m)
+    #print(m)
     if m != 0: m = 23/m
     #print(m*valueDefaultMatrix, Col(round(m*valueDefaultMatrix))+' ')
     for iy, y in enumerate(dots):
@@ -42,8 +42,8 @@ def DysplayDots(dots):
                     print(Col(round(dot*m)+232) +str(round(dot)), end = ' ' + Col(-1))
                     continue
                 print(Col(round(dot*m)+232) +' ', end = ' ' + Col(-1))
-        for _ in range(len(str(valueDefaultMatrix))//3):
-            print()
+            else:
+                print('  ', end = '')
         print()
     print(m, int(m**-1*23))
     for x in range(int(m**-1*23)+1):
@@ -72,10 +72,29 @@ def findTriangles(dots):
                 if True not in inside:
                     triOut.append([dots[i1], dots[i2], dots[i3]])
     return triOut
+import matplotlib.pyplot as plt
 def ravioliFindTriangles(points):
+    ogPoints = points.tolist()
+    points = np.array([[x[0], x[1]] for x in points])
+    p = points.tolist()
     tri = Delaunay(points)
-    triangles = points[tri.simplices]
-    return triangles
+    triangles =points[tri.simplices]
+    output = triangles.tolist()    
+
+
+    plt.triplot(points[:,0], points[:,1], tri.simplices)
+
+    plt.plot(points[:,0], points[:,1], 'o')
+
+    plt.show()
+    print(output)
+    print(ogPoints)
+    for i1, x in enumerate(output):
+        for i2, point in enumerate(x):
+            print(ogPoints[p.index(point)][2],triangles[i1][i2],point, "wahahaha")
+            output[i1][i2].append(ogPoints[p.index(point)][2])
+    print(output, points)
+    return output
 
 
 
@@ -84,7 +103,8 @@ def ravioliFindTriangles(points):
 #A###B##
 ########
 #D###C## operation order --> A, B, C, D                                                jjj
-setPoints = [[-3, 3, 10], [2, 1, 0], [3, -2, 0], [-1, -3, 0], [1, -1, 0], [-2, 2, 2], [0, 0, 5]]
+setPoints = [ [2, 1, 1], [3, -2, 8], [-1, -3, 0], [-2, 2, 2], [0, 0, 10], [-3, -3, 10]]
+
 c = 5.5
 for i1, x in enumerate(setPoints):
     for i2 in range(2):
@@ -144,32 +164,29 @@ def TestRunTri(triPoints, pixel):
     #    print(f'{e}\n\n{triPoints}\n\n{pixel}\n\n{out}')
     #    exit()
     #
-print(setPoints)
-for y, _ in enumerate(Dots):
-    for x in range(len(_)):
-        a = TestRun([[x, y]])[0]
-        if a != -1:
-            Dots[y][x] = a
+#print(setPoints)
+#for y, _ in enumerate(Dots):
+#    for x in range(len(_)):
+#        a = TestRun([[x, y]])[0]
+#        if a != -1:
+#            Dots[y][x] = a
 
 
-print(insideTriangle([setPoints[0], setPoints[1], setPoints[6]], setPoints[5]))
+#print(insideTriangle([setPoints[0], setPoints[1], setPoints[6]], setPoints[5]))
 #print(findTriangles(np.array(setPoints)))
 #DysplayDots(Dots)
 #t = findTriangles(setPoints)
 t = ravioliFindTriangles(np.array(setPoints))
-for x in t:
-    print(x)
-print(len(t))
 for i1, y in enumerate(Dots):
     for i2, x in enumerate(y):
         Dots[i1][i2] = TestRunTri(t, [i2, i1])
 
 DysplayDots(Dots)
-for i1, y in enumerate(Dots):
-    for i2, x in enumerate(y):
-        Dots[i1][i2] = TestRun([[i2, i1]])[0]
-#TestRun(setPoints)
-DysplayDots(Dots)
+#for i1, y in enumerate(Dots):
+#    for i2, x in enumerate(y):
+#        Dots[i1][i2] = TestRun([[i2, i1]])[0]
+##TestRun(setPoints)
+#DysplayDots(Dots)
 
 #find every triangle
 #
