@@ -6,8 +6,8 @@ import numpy as np
 
 #raise the threshold not the entire region is green and lower it if pixels outside the region are green
 #If inverse = True, will select the above the threashold (lighter regions), if False will select bellow threashold (Darker regions)
-inverse = True
-threashhold = 10
+inverse = False
+threashhold = 255
 imageName = ''
 with open('ImageName.txt', 'r') as f:
     imageName = f.read()

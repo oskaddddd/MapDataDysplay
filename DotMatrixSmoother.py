@@ -73,44 +73,41 @@ def findTriangles(dots):
                     triOut.append([dots[i1], dots[i2], dots[i3]])
     return triOut
 import matplotlib.pyplot as plt
-def ravioliFindTriangles(points):
+def ravioliTriangles2D(points):
+    tri = Delaunay(points)
+    triangles =points[tri.simplices]
+    return triangles
+def ravioliFindTriangles(points, showTriangles = True):
     ogPoints = points.tolist()
     points = np.array([[x[0], x[1]] for x in points])
     p = points.tolist()
     tri = Delaunay(points)
     triangles =points[tri.simplices]
     output = triangles.tolist()    
-
-
-    plt.triplot(points[:,0], points[:,1], tri.simplices)
-
-    plt.plot(points[:,0], points[:,1], 'o')
-
-    plt.show()
-    print(output)
-    print(ogPoints)
+    if showTriangles:
+        plt.triplot(points[:,0], points[:,1], tri.simplices)
+        plt.plot(points[:,0], points[:,1], 'o')
+        plt.show()
     for i1, x in enumerate(output):
         for i2, point in enumerate(x):
-            print(ogPoints[p.index(point)][2],triangles[i1][i2],point, "wahahaha")
+            #print(ogPoints[p.index(point)][2],triangles[i1][i2],point, "wahahaha")
             output[i1][i2].append(ogPoints[p.index(point)][2])
-    print(output, points)
+    print(output)
     return output
-
-
 
 
 #x, y, z
 #A###B##
 ########
 #D###C## operation order --> A, B, C, D                                                jjj
-setPoints = [ [2, 1, 1], [3, -2, 8], [-1, -3, 0], [-2, 2, 2], [0, 0, 10], [-3, -3, 10]]
-
-c = 5.5
-for i1, x in enumerate(setPoints):
-    for i2 in range(2):
-
-        setPoints[i1][i2]= int(x[i2]*c+sizeMatrix/2)
-    Dots[x[1]][x[0]] = x[2]
+#setPoints = [ [2, 1, 1], [3, -2, 8], [-1, -2, 0], [-2, 2, 2], [0, 0, 9], [-3, -3, 7], [3, 0, 2], [3, 3, 0], [-3, 3, 0],[3, -3, 0]]
+#
+#c = 5.5
+#for i1, x in enumerate(setPoints):
+#    for i2 in range(2):
+#
+#        setPoints[i1][i2]= int(x[i2]*c+sizeMatrix/2)
+#    Dots[x[1]][x[0]] = x[2]
   
 #accepts a list of points [[x1, y1], [x2, y2]...]  <--- this is for when u get confused an hour after writing this code <--- this is for when u dont know what to do
 def TestRun(points:list):
@@ -134,59 +131,48 @@ def TestRun(points:list):
                     return out
             out.append(sum(k)/sum(w))
     return out
-def TestRunTri(triPoints, pixel):
+def TestRunTri(triPoints, pixel, test:bool, setPoints: list):
     out = []
     if pixel not in [[p[0], p[1]] for p in setPoints]:
         for tri in triPoints:
             #print('fff', tri, pixel)
             if insideTriangle(tri, pixel):
-                d = []
-                for i in range(len(tri)):
-                    d.append(math.sqrt((pixel[0]-tri[i][0])**2+(pixel[1]-tri[i][1])**2))
-                #print('im alive')
-                #check if point is inside quad
+                if test == True:
+                        x1, y1, z1 = tri[0]
+                        x2, y2, z2 = tri[1]
+                        x3, y3, z3 = tri[2]
 
+                        # Calculate the barycentric coordinates
+                        A = 0.5 * abs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
+                        alpha = (0.5 * abs(x2 * y3 - x3 * y2 + (y2 - y3) * pixel[0] + (x3 - x2) * pixel[1])) / A
+                        beta = (0.5 * abs(x3 * y1 - x1 * y3 + (y3 - y1) * pixel[0] + (x1 - x3) * pixel[1])) / A
+                        gamma = (0.5 * abs(x1 * y2 - x2 * y1 + (y1 - y2) * pixel[0] + (x2 - x1) * pixel[1])) / A
+
+                        # Interpolate the value based on the barycentric coordinates
+                        value = alpha * z1 + beta * z2 + gamma * z3
+
+                        return value
+                d = []
                 w = []
                 k = []
                 for i1 in range(len(tri)):
-                    if d[i1] != 0:
-                        w.append(1/d[i1])
+                    d.append(math.sqrt((pixel[0]-tri[i1][0])**2+(pixel[1]-tri[i1][1])**2))
+                    w.append(1/d[i1])
                         #print(w, tri, i1)
-                        k.append(w[len(w)-1]*tri[i1][2])
-                        #print(k)
-                        out.append(sum(k)/sum(w))
+                    k.append(w[len(w)-1]*tri[i1][2])
+                out.append(sum(k)/sum(w))
+                break
         if len(out) != 0:
-        
-            return sum(out)/len(out)
-    else:
-        return setPoints[[[p[0], p[1]] for p in setPoints].index(pixel)][2]
-    #except Exception as e:
-    #    print(f'{e}\n\n{triPoints}\n\n{pixel}\n\n{out}')
-    #    exit()
-    #
-#print(setPoints)
-#for y, _ in enumerate(Dots):
-#    for x in range(len(_)):
-#        a = TestRun([[x, y]])[0]
-#        if a != -1:
-#            Dots[y][x] = a
+            #print('hooly shit wwtf', out)
+            return out[0]
 
+    #else:
+    #    return setPoints[[[p[0], p[1]] for p in setPoints].index(pixel)][2]
 
-#print(insideTriangle([setPoints[0], setPoints[1], setPoints[6]], setPoints[5]))
-#print(findTriangles(np.array(setPoints)))
-#DysplayDots(Dots)
-#t = findTriangles(setPoints)
-t = ravioliFindTriangles(np.array(setPoints))
-for i1, y in enumerate(Dots):
-    for i2, x in enumerate(y):
-        Dots[i1][i2] = TestRunTri(t, [i2, i1])
-
-DysplayDots(Dots)
+#t = ravioliFindTriangles(np.array(setPoints))
 #for i1, y in enumerate(Dots):
 #    for i2, x in enumerate(y):
-#        Dots[i1][i2] = TestRun([[i2, i1]])[0]
-##TestRun(setPoints)
+#        Dots[i1][i2] = TestRunTri(t, [i2, i1], True)
+#
 #DysplayDots(Dots)
 
-#find every triangle
-#
