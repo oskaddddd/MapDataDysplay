@@ -23,7 +23,7 @@ def Col(value: int):
         return f"\033[48;5;{value}m"
     
 
-def DysplayDots(dots):
+def DysplayDots(dots, setPoints):
     m = 1
     for y in dots:
         for x in y:
@@ -138,29 +138,43 @@ def TestRunTri(triPoints, pixel, test:bool, setPoints: list):
             #print('fff', tri, pixel)
             if insideTriangle(tri, pixel):
                 if test == True:
-                        x1, y1, z1 = tri[0]
-                        x2, y2, z2 = tri[1]
-                        x3, y3, z3 = tri[2]
+                        #x1, y1, z1 = tri[0]
+                        #x2, y2, z2 = tri[1]
+                        #x3, y3, z3 = tri[2]
+#
+                        ## Calculate the barycentric coordinates
+                        #A = 0.5 * abs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
+                        #alpha = (0.5 * abs(x2 * y3 - x3 * y2 + (y2 - y3) * pixel[0] + (x3 - x2) * pixel[1])) / A
+                        #beta = (0.5 * abs(x3 * y1 - x1 * y3 + (y3 - y1) * pixel[0] + (x1 - x3) * pixel[1])) / A
+                        #gamma = (0.5 * abs(x1 * y2 - x2 * y1 + (y1 - y2) * pixel[0] + (x2 - x1) * pixel[1])) / A
+#
+                        ## Interpolate the value based on the barycentric coordinates
+                        #value = alpha * z1 + beta * z2 + gamma * z3
+#
+                        #return value
+                    x1, y1, A = tri[0]
+                    x2, y2, B = tri[1]
+                    x3, y3, C = tri[2]
+                    a = areaTriangle([tri[1], pixel, tri[2]])
+                    b = areaTriangle([tri[0], pixel, tri[2]])
+                    c = areaTriangle([tri[0], pixel, tri[1]])
+                    #ab, bc, ac = a*b, b*c, a*c
+                    #val = (A*bc+B*ac+C*ab)/sum([ab, bc, ac])
+                    
 
-                        # Calculate the barycentric coordinates
-                        A = 0.5 * abs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
-                        alpha = (0.5 * abs(x2 * y3 - x3 * y2 + (y2 - y3) * pixel[0] + (x3 - x2) * pixel[1])) / A
-                        beta = (0.5 * abs(x3 * y1 - x1 * y3 + (y3 - y1) * pixel[0] + (x1 - x3) * pixel[1])) / A
-                        gamma = (0.5 * abs(x1 * y2 - x2 * y1 + (y1 - y2) * pixel[0] + (x2 - x1) * pixel[1])) / A
+                    val = (A*a+B*b+C*c)/(a+b+c)
+                    return val
 
-                        # Interpolate the value based on the barycentric coordinates
-                        value = alpha * z1 + beta * z2 + gamma * z3
-
-                        return value
-                d = []
-                w = []
-                k = []
-                for i1 in range(len(tri)):
-                    d.append(math.sqrt((pixel[0]-tri[i1][0])**2+(pixel[1]-tri[i1][1])**2))
-                    w.append(1/d[i1])
-                        #print(w, tri, i1)
-                    k.append(w[len(w)-1]*tri[i1][2])
-                out.append(sum(k)/sum(w))
+                
+                #d = []s
+                #w = []
+                #k = []
+                #for i1 in range(len(tri)):
+                #    d.append(math.sqrt((pixel[0]-tri[i1][0])**2+(pixel[1]-tri[i1][1])**2))
+                #    w.append(1/d[i1])
+                #        #print(w, tri, i1)
+                #    k.append(w[len(w)-1]*tri[i1][2])
+                #out.append(sum(k)/sum(w))
                 break
         if len(out) != 0:
             #print('hooly shit wwtf', out)
@@ -169,10 +183,4 @@ def TestRunTri(triPoints, pixel, test:bool, setPoints: list):
     #else:
     #    return setPoints[[[p[0], p[1]] for p in setPoints].index(pixel)][2]
 
-#t = ravioliFindTriangles(np.array(setPoints))
-#for i1, y in enumerate(Dots):
-#    for i2, x in enumerate(y):
-#        Dots[i1][i2] = TestRunTri(t, [i2, i1], True)
-#
-#DysplayDots(Dots)
 

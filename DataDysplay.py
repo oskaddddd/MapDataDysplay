@@ -4,6 +4,7 @@ import numpy as np
 import json
 import DotMatrixSmoother as dms
 import time
+from gpushittest import createPixel
 
 imageName = ''
 with open('ImageName.txt', 'r') as f:
@@ -58,9 +59,10 @@ def Smooth(points):
     points = [[x["Pixel"][0], x["Pixel"][1], x["Value"]] for x in points]
     
     m = max([x[2] for x in points])
+    
     m = 255/m
     
-    tri = dms.ravioliFindTriangles(np.array(points), showTriangles=True)
+    tri = dms.ravioliFindTriangles(np.array(points), showTriangles=False)
     imageArr = np.array(image)
     v = image.size[1]/100
     t = time.time()
@@ -69,6 +71,7 @@ def Smooth(points):
             if x[3] == 255:
                 raw = dms.TestRunTri(tri, [i2, i1], test=True, setPoints=points)
                 if raw!= None:
+                    #print("I am real")
                     val = round(raw *m)
                     #print(val, 'adad')
                     if val < 0 and val > 255:
@@ -79,7 +82,30 @@ def Smooth(points):
             print(f"  {p}% [{'#'*int(p/5)}{'-'*int((100-p)/5)}]", '\033[F')
     print(time.time()-t, time.time()-t1)
     return np.array(np.uint8(imageArr))
+
+def SmoothGpu(points):
+    t1 = time.time()
+    points = [[x["Pixel"][0], x["Pixel"][1], x["Value"]] for x in points]
     
+    creator = createPixel()
+
+    m = max([x[2] for x in points])
+    m = 255/m
+    imageArr = np.array(image)
+
+    t = time.time()
+    #dots = []
+    #for i1, y in enumerate(imageArr):
+    #    for i2, x in enumerate(y):
+    #        if x[3] == 255:
+    #            dots.append([i2, i1, 0])
+    test = creator.createPixelBuffer(image.size, Image=image)
+    print(test, image.size)
+    creator.createTriangles(points=np.array(points))
+    res = creator.compute()
+    print(res, 'wawawawawawa')
+    print(time.time()-t, time.time()-t1)
+    return np.array(np.uint8(imageArr))
 with open('data.json', 'r') as f:
     data = json.load(f)
     print(data) 
@@ -90,12 +116,8 @@ for x in data:
     if t["Pixel"][0] < image.size[0] and t["Pixel"][1] < image.size[1] and t["Pixel"][0] > 0 and t["Pixel"][1] > 0:
         mapData.append(t)
     print(t)
-arr = Smooth(mapData)
-PIL.Image.fromarray(arr).show()
+arr = SmoothGpu(mapData)
+#PIL.Image.fromarray(arr).show()
 print(mapData, 'waaaw')
-ShowPoints()
+#ShowPoints()
     
-
-root = Tk()
-
-hello = Label(root, text="Hello world")  
