@@ -57,8 +57,29 @@ def insideTriangle(dots, checkpoint):#[[y, x][y, x][y, x]] - [y, x]
     S = [areaTriangle([dots[0], checkpoint, dots[1]]), areaTriangle([dots[1], checkpoint, dots[2]]), areaTriangle([dots[0], checkpoint, dots[2]])]
     triS = areaTriangle(dots)
     return (True if sum(S) == triS else False)   
-    
-    
+def TestRunTri(triPoints, pixel, test:bool, setPoints: list):
+    out = []
+    if pixel not in [[p[0], p[1]] for p in setPoints]:
+        for i, tri in enumerate(triPoints):
+            #print('fff', tri, pixel)
+            
+            
+            #return np.array([areaTriangle([tri[1], tri[0], tri[2]]) ,areaTriangle([tri[1], pixel, tri[2]]), areaTriangle([tri[0], pixel, tri[2]]), areaTriangle([tri[0], pixel, tri[1]]), i] )    
+            if insideTriangle(tri, pixel):
+                
+                if test == True:
+                    #print('huuh')
+                    x1, y1, A = tri[0]
+                    x2, y2, B = tri[1]
+                    x3, y3, C = tri[2]
+                    a = areaTriangle([tri[1], pixel, tri[2]])
+                    b = areaTriangle([tri[0], pixel, tri[2]])
+                    c = areaTriangle([tri[0], pixel, tri[1]])
+
+                    val = (A*a+B*b+C*c)/(a+b+c)
+                    #print(val)
+                    return val
+    #return [0, 0, 4, 0, 0]
 def findTriangles(dots):
     l = len(dots)
     triOut = []
@@ -131,54 +152,9 @@ def TestRun(points:list):
                     return out
             out.append(sum(k)/sum(w))
     return out
-def TestRunTri(triPoints, pixel, test:bool, setPoints: list):
-    out = []
-    if pixel not in [[p[0], p[1]] for p in setPoints]:
-        for tri in triPoints:
-            #print('fff', tri, pixel)
-            if insideTriangle(tri, pixel):
-                if test == True:
-                        #x1, y1, z1 = tri[0]
-                        #x2, y2, z2 = tri[1]
-                        #x3, y3, z3 = tri[2]
-#
-                        ## Calculate the barycentric coordinates
-                        #A = 0.5 * abs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
-                        #alpha = (0.5 * abs(x2 * y3 - x3 * y2 + (y2 - y3) * pixel[0] + (x3 - x2) * pixel[1])) / A
-                        #beta = (0.5 * abs(x3 * y1 - x1 * y3 + (y3 - y1) * pixel[0] + (x1 - x3) * pixel[1])) / A
-                        #gamma = (0.5 * abs(x1 * y2 - x2 * y1 + (y1 - y2) * pixel[0] + (x2 - x1) * pixel[1])) / A
-#
-                        ## Interpolate the value based on the barycentric coordinates
-                        #value = alpha * z1 + beta * z2 + gamma * z3
-#
-                        #return value
-                    x1, y1, A = tri[0]
-                    x2, y2, B = tri[1]
-                    x3, y3, C = tri[2]
-                    a = areaTriangle([tri[1], pixel, tri[2]])
-                    b = areaTriangle([tri[0], pixel, tri[2]])
-                    c = areaTriangle([tri[0], pixel, tri[1]])
-                    #ab, bc, ac = a*b, b*c, a*c
-                    #val = (A*bc+B*ac+C*ab)/sum([ab, bc, ac])
-                    
 
-                    val = (A*a+B*b+C*c)/(a+b+c)
-                    return val
 
                 
-                #d = []s
-                #w = []
-                #k = []
-                #for i1 in range(len(tri)):
-                #    d.append(math.sqrt((pixel[0]-tri[i1][0])**2+(pixel[1]-tri[i1][1])**2))
-                #    w.append(1/d[i1])
-                #        #print(w, tri, i1)
-                #    k.append(w[len(w)-1]*tri[i1][2])
-                #out.append(sum(k)/sum(w))
-                break
-        if len(out) != 0:
-            #print('hooly shit wwtf', out)
-            return out[0]
 
     #else:
     #    return setPoints[[[p[0], p[1]] for p in setPoints].index(pixel)][2]
