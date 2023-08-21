@@ -1,8 +1,6 @@
-import numpy as np
+from perlin_noise import PerlinNoise
 
-a = np.array([[[1, 2], [1, 2], [1, 2]],
-     [[1, 2], [1, 2], [1, 2]],
-     [[1, 2], [1, 2], [1, 2]],
-     [[1, 2], [1, 2], [1, 2]],
-     [[1, 2], [1, 2], [1, 2]]])
-print(a.shape)
+noise = PerlinNoise(octaves=10, seed=1)
+for x in range(100):
+     for y in range(100):
+          print((noise([x/100, y/100])+1)*50)

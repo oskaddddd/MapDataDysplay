@@ -6,8 +6,8 @@ import math
 
 
 class createPixel():
-    def __init__(self) -> None:
-        self.ctx = cl.create_some_context(interactive=False)
+    def __init__(self, interactive = False) -> None:
+        self.ctx = cl.create_some_context(interactive=interactive)
         self.queue = cl.CommandQueue(self.ctx)
 
         self.mf = cl.mem_flags
@@ -38,15 +38,22 @@ class createPixel():
         imageArr = np.array(Image, dtype=Dots.dtype)
         self.imageBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = imageArr.nbytes)
         cl.enqueue_copy(self.queue, self.imageBuffer, imageArr)
-        
+        print(imageArr)
+         
         print(Dots.nbytes, self.pixels.nbytes, Dots.nbytes*2, 'lajkshflkahsjl;kkksskkssklalala')
         self.image = Image
         return Dots
     
-    def createTriangles(self, points, showTriangles = False):
+    def createTriangles(self, points, Mode = 0 ,showTriangles = False):
+        '''Modes:\n
+        0 - Black and White (white - high, black - low)\n
+        1 - RGB (Red - high, Green - mid, Blue - low)'''
         ogPoints = points.copy()
-        m = max([x[2] for x in points])
-        m = 255/m
+        p = [x[2] for x in points]
+        
+        m = math.ceil(max(p))
+        l = math.floor(min(p))
+        print(l, p, 'agahsfhas', m)
         points = np.array(points)
         points = np.array([[x[0], x[1]] for x in points])
         p = points.tolist()
@@ -65,55 +72,86 @@ class createPixel():
         self.triBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = output.nbytes)
         cl.enqueue_copy(self.queue, self.triBuffer, self.triangles)
         
-        self.size = np.array([self.image.size[0], self.image.size[1], 3, int(self.triangles.size/9), math.floor(m)])
-        self.sizeBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = self.size.nbytes)
-        cl.enqueue_copy(self.queue, self.sizeBuffer, self.size)
+        #size0, size1, sizeZ, sizeTri, maxVal, minVal, mode
+        self.data = np.array([self.image.size[0], self.image.size[1], 3, int(self.triangles.size/9),m, l, Mode])
+        self.sizeBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = self.data.nbytes)
+        cl.enqueue_copy(self.queue, self.sizeBuffer, self.data)
         return output
     
     def compute(self):
         programSource = """
-    kernel void Bilinear(global int *triangles, global int *out, global int *size, global int *Image) {
+    kernel void Bilinear(global int *triangles, global int *out, global int *data, global int *Image) {
         
         int g1 = get_global_id(1);
         int g0 = get_global_id(0);
 
-        int index = g1 * size[0] * size[2] + g0 * size[2];
-        int indexOut = g1*size[0]*4+g0*4;
+        int index = g1 * data[0] * data[2] + g0 * data[2];
+        int indexOut = g1*data[0]*4+g0*4;
         int i = 0;
-        for (i = 0; i < size[3]; i++){
-            int tri[9];
-            int i1 = 0;
-            for (i1 = 0; i1 < 9; i1++){
-                tri[i1] = triangles[i1+i*9];
-            }
+        
+        if (Image[indexOut + 3] == 255){
+            for (i = 0; i < data[3]; i++){
+                int tri[9];
+                int i1 = 0;
+                for (i1 = 0; i1 < 9; i1++){
+                    tri[i1] = triangles[i1+i*9];
+                }
 
-            float a = fabs((float)tri[0]*(tri[4]-tri[7]) + tri[3]*(tri[7]-tri[1]) + tri[6]* (tri[1]-tri[4]));
-            float a1 = fabs((float)g0*(tri[4]-tri[7]) + tri[3]*(tri[7]-g1) + tri[6]* (g1-tri[4]));
-            float a2 = fabs((float)tri[0]*(g1-tri[7]) + g0*(tri[7]-tri[1]) + tri[6]* (tri[1]-g1));
-            float a3 = fabs((float)tri[0]*(tri[4]-g1) + tri[3]*(g1-tri[1]) + g0* (tri[1]-tri[4]));
-            
-            if(fabs((a1 + a2 + a3) -a) < 0.0001){
-                int A = tri[2];
-                int B = tri[5];
-                int C = tri[8];
-                
-                out[indexOut] = round((A*a1+B*a2+C*a3)/(a1+a2+a3)*size[4]);
-                out[indexOut+1] = round((A*a1+B*a2+C*a3)/(a1+a2+a3)*size[4]);
-                out[indexOut+2] = round((A*a1+B*a2+C*a3)/(a1+a2+a3)*size[4]);
-                out[indexOut+3] = 255;
-                break;
+                float a = fabs((float)tri[0]*(tri[4]-tri[7]) + tri[3]*(tri[7]-tri[1]) + tri[6]* (tri[1]-tri[4]));
+                float a1 = fabs((float)g0*(tri[4]-tri[7]) + tri[3]*(tri[7]-g1) + tri[6]* (g1-tri[4]));
+                float a2 = fabs((float)tri[0]*(g1-tri[7]) + g0*(tri[7]-tri[1]) + tri[6]* (tri[1]-g1));
+                float a3 = fabs((float)tri[0]*(tri[4]-g1) + tri[3]*(g1-tri[1]) + g0* (tri[1]-tri[4]));
+
+                if(fabs((a1 + a2 + a3) -a) < 0.0001){
+                    int A = tri[2];
+                    int B = tri[5];
+                    int C = tri[8];
+
+                    float n = ((A*a1+B*a2+C*a3)/(a1+a2+a3))-data[5];
+                    if (data[6] == 0){
+                        float o = n*(255/(data[4]-data[5]));
+                        out[indexOut] = o;
+                        out[indexOut+1] = o;
+                        out[indexOut+2] = o;
+                        out[indexOut+3] = 255;
+                    }
+                    else if (data[6] == 1){
+                        float p = (data[4]-data[5])*0.25;
+
+                        if (n >= p*2.7){
+                            out[indexOut+1] = (((p*4)-n)/(p*1.3))*255;
+                            out[indexOut] = 255;
+                        }
+                        else if (n >= p*2 && n < p*2.7){
+                            out[indexOut] = ((n-p*2)/(p*0.7))*255;
+                            out[indexOut+1] = 255;
+                        }
+                        else if (n >= p*1.3 && n < p*2){
+                            out[indexOut+2] = ((2*p-n)/(p*0.7))*255;
+                            out[indexOut+1] = 255;
+                        }
+                        if (n < p*1.3){
+                            out[indexOut+1] = (n/(p*1.3))*255;
+                            out[indexOut+2] = 255;
+                        }
+                        out[indexOut+3] = 255;
+                    }
+
+                    break;
+                }
             }
-        }
-        if(out[indexOut+3] != 255){
-            out[indexOut] = Image[indexOut];
-            out[indexOut+1] = Image[indexOut+1];
-            out[indexOut+2] = Image[indexOut+2];
-            out[indexOut+3] = Image[indexOut+3];
+            if(out[indexOut+3] != 255){
+                out[indexOut] = Image[indexOut];
+                out[indexOut+1] = Image[indexOut+1];
+                out[indexOut+2] = Image[indexOut+2];
+                out[indexOut+3] = Image[indexOut+3];
+            }
         }
     }
 """
         prg = cl.Program(self.ctx, programSource).build()
         
-        prg.Bilinear(self.queue, (self.size[0], self.size[1]), None, self.triBuffer, self.destBuffer, self.sizeBuffer, self.imageBuffer)
+        prg.Bilinear(self.queue, (self.data[0], self.data[1]), None, self.triBuffer, self.destBuffer, self.sizeBuffer, self.imageBuffer)
+        
         cl.enqueue_copy(self.queue, self.res, self.destBuffer)
         return self.res
