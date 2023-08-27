@@ -1,24 +1,15 @@
 import pyopencl as cl
 import numpy as np
-import matplotlib as plt
 from scipy.spatial import Delaunay
 import math
+
 
 
 class createPixel():
     def __init__(self, interactive = False) -> None:
         self.ctx = cl.create_some_context(interactive=interactive)
         self.queue = cl.CommandQueue(self.ctx)
-
         self.mf = cl.mem_flags
-
-        self.pixelBuffer = None
-        self.pixels = None
-        self.triangles = None
-        self.res = None
-        self.image = None
-        self.destBuffer = None
-        self.triBuffer = None
     def createPixelBuffer(self, resolution = None, Points = None, Image =None) -> list: #width, height
         Dots = []
         if resolution != None and Points == None:
@@ -28,7 +19,7 @@ class createPixel():
             Dots = np.dstack((xx, yy, np.zeros_like(xx)))
             self.res = np.ones((resolution[1], resolution[0], 4), dtype=Dots.dtype)
         
-        print(self.res.shape, Dots.shape)  
+        #print(self.res.shape, Dots.shape)  
         self.pixels = Dots
         self.pixelBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = Dots.nbytes)
         cl.enqueue_copy(self.queue, self.pixelBuffer, self.pixels)
@@ -38,36 +29,36 @@ class createPixel():
         imageArr = np.array(Image, dtype=Dots.dtype)
         self.imageBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = imageArr.nbytes)
         cl.enqueue_copy(self.queue, self.imageBuffer, imageArr)
-        print(imageArr)
+        #print(imageArr)
          
-        print(Dots.nbytes, self.pixels.nbytes, Dots.nbytes*2, 'lajkshflkahsjl;kkksskkssklalala')
+        #print(Dots.nbytes, self.pixels.nbytes, Dots.nbytes*2, 'lajkshflkahsjl;kkksskkssklalala')
         self.image = Image
         return Dots
     
     def createTriangles(self, points, Mode = 0 ,showTriangles = False):
         '''Modes:\n
         0 - Black and White (white - high, black - low)\n
-        1 - RGB (Red - high, Green - mid, Blue - low)'''
-        ogPoints = points.copy()
-        p = [x[2] for x in points]
+        1 - RGB (Red - high, Green - mid, Blue - low)\n
+        2 - RG (Green - high, Red - Low)\n
+        3 - RB (Red - high, Blue - low)'''
+        #ogPoints = points.copy()
+        p = points[:, 2]
+        points = points[:, :2]
         
         m = math.ceil(max(p))
         l = math.floor(min(p))
-        print(l, p, 'agahsfhas', m)
-        points = np.array(points)
-        points = np.array([[x[0], x[1]] for x in points])
-        p = points.tolist()
+
         tri = Delaunay(points)
-        triangles =points[tri.simplices]
-        output = triangles.tolist()    
-        if showTriangles:
-            plt.triplot(points[:,0], points[:,1], tri.simplices)
-            plt.plot(points[:,0], points[:,1], 'o')
-            plt.show()
-        for i1, x in enumerate(output):
-            for i2, point in enumerate(x):
-                output[i1][i2].append(ogPoints[p.index(point)][2])
-        output = np.array(output)
+        
+        output = np.empty((tri.simplices.shape[0], 3, 3), dtype=self.pixels.dtype)
+
+        for i, simplex in enumerate(tri.simplices):
+            triangle = [np.array([points[index][0], points[index][1], p[index]]) for index in simplex]
+            output[i] = triangle
+        print(output)
+
+        #output = np.array(output)
+        
         self.triangles = output
         self.triBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = output.nbytes)
         cl.enqueue_copy(self.queue, self.triBuffer, self.triangles)
@@ -136,6 +127,30 @@ class createPixel():
                         }
                         out[indexOut+3] = 255;
                     }
+                    else if (data[6] == 2){
+                        float p = (data[4]-data[5])*0.5;
+                        if (n >= p){
+                            out[indexOut] = 255;
+                            out[indexOut+1] = (p*2-n)/p * 255;
+                        }
+                        else if (n < p){
+                            out[indexOut+1] = 255;
+                            out[indexOut] = (n)/p * 255;
+                        }
+                        out[indexOut+3] = 255;
+                    }
+                    else if (data[6] == 3){
+                        float p = (data[4]-data[5])*0.5;
+                        if (n > p){
+                            out[indexOut] = 255;
+                            out[indexOut+2] = (p*2-n)/p * 200;
+                        }
+                        else if (n < p){
+                            out[indexOut+2] = 200;
+                            out[indexOut] = n/p * 255;
+                        }
+                        out[indexOut+3] = 255;
+                    }
 
                     break;
                 }
@@ -155,3 +170,6 @@ class createPixel():
         
         cl.enqueue_copy(self.queue, self.res, self.destBuffer)
         return self.res
+    def Blur(self):
+        source = '''kernel void Blur(
+            '''

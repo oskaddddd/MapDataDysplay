@@ -2,8 +2,8 @@ import random
 import json
 from perlin_noise import PerlinNoise
 
-n = 100
-corners = [[56.4, 21.15], [53.9, 26]]
+n = 300
+corners = [[53.85405444949857, 20.840097270351063], [56.60326420819254, 27.22864675471188]]
 y = [corners[0][1], corners[1][1]]
 x = [corners[0][0], corners[1][0]]
 
@@ -20,9 +20,9 @@ arr = []
 
 my = min(y)
 mx = min(x)
-print(nx, ny, "\n", kx, ky)
 
-noise = PerlinNoise(octaves=6, seed=48470)
+
+noise = PerlinNoise(octaves=7, seed=6241)
 
 for xi in range(nx):
     for yi in range(ny):
@@ -30,5 +30,5 @@ for xi in range(nx):
         #print([mx+kkx*xi, my+kky*yi])
 with open('data.json', 'w') as f:
     json.dump(arr, f, indent=2)
-print(nx, ny, "\n", kx, ky)
+print(nx, ny, "\n", kx, ky, nx*ny)
 
