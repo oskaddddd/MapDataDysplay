@@ -67,7 +67,7 @@ class createPixel():
         self.data = np.array([self.image.size[0], self.image.size[1], 3, int(self.triangles.size/9),m, l, Mode])
         self.sizeBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = self.data.nbytes)
         cl.enqueue_copy(self.queue, self.sizeBuffer, self.data)
-        return output
+        return (output, m, l)
     
     def compute(self):
         programSource = """
