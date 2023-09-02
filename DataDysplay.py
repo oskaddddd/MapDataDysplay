@@ -1,9 +1,9 @@
 from tkinter import *
-import PIL.Image
+import PIL.Image, PIL.ImageDraw, PIL.ImageFont
 import numpy as np
 import json
 import time
-from gpushittest import createPixel
+from Interpolation import createPixel
 
 #Get image name
 imageName = ''
@@ -59,23 +59,87 @@ print(time.time()-t2)
 
 
 #Interpolation Function on the gpu
-def SmoothGpu(points):
+def SmoothGpu(points, Mode, Agenda = True, agendaAlignmentHor = 0, agendaAlignmentVer = 0):
+    '''agenda alignment horizontal:\n
+0 - bottom,\n
+1 - middle, \n
+2 - top.\n\n
+
+agenda alignment vertical:\n
+0 - left,\n
+1 - right.'''
     t1 = time.time()
     #points = [[x["Pixel"][0], x["Pixel"][1], x["Value"]] for x in points]
-    
+    points=np.array(points)
     creator = createPixel(False)
     print(time.time()-t1)
     t1 = time.time()
     creator.createPixelBuffer(image.size, Image=image)
     print(time.time()-t1)
     t1 = time.time()
-    creator.createTriangles(points=np.array(points), Mode=0, showTriangles=False)
+    m, l = creator.createTriangles(points=points, Mode=Mode, showTriangles=False)[1:]
     print(time.time()-t1)
     t = time.time()
     res = creator.compute()
     print(time.time()-t, time.time()-t1)
     
+    if Agenda == True:
+        AgendaObj = CreateLegend((l, m), Mode, image.size, 0.6, 8)
+        filer = np.zeros((res.shape[0]-AgendaObj.shape[0], AgendaObj.shape[1], 4))
+        res = np.concatenate((res, np.concatenate((filer, AgendaObj), axis=0)), axis = 1)
+        #if agendaAlignmentHor == 0:
+        #    if agendaAlignmentVer ==0:
+        #        res = np.concatenate((res, CreateLegend((l, m), Mode, image.size, 0.5, 8)), axis = 1)
+    
+    
     return res.astype(np.uint8)
+
+def CreateLegend(lenth, Mode, dimentions, scale, steps, textScale = 0.9, textRound = 1):
+    barSize = round(dimentions[1]/(1.5*steps - 0.5)*scale)
+    Legend = np.zeros((round(steps*barSize*1.5-barSize*0.5), 3*barSize, 4), dtype=np.uint8)
+    
+    textLegend = np.zeros((round(steps*barSize*1.5-barSize*0.5), round(barSize*0.59*textScale*(textRound+len(str(round(lenth[1])))))+10 + (8 if textRound != 0 else 0), 4), dtype=np.uint8)
+
+    print(barSize*textScale, 'wad')
+    imText = PIL.Image.fromarray(textLegend)
+    drawText = PIL.ImageDraw.Draw(imText)
+
+    font = PIL.ImageFont.truetype("arial.ttf", round(barSize*textScale))
+    
+    for i in range(steps):
+        
+        barsColor = None
+        if Mode == 0:
+            val = round(255*(i/(steps-1)))
+            
+            barsColor = np.array([val, val, val, 255])
+            #print(barsColor, round(1.5*barSize*(steps-1-i)+barSize), round(1.5*barSize*(steps-1-i)), i/(steps-1), agenda.shape)
+        elif Mode == 1:
+            k = i/(steps-1)*4
+            
+            if k >= 2.7:
+                barsColor = np.array([255, (4-k)*255/1.3, 0, 255])
+            elif k >= 2 and k < 2.7:
+                barsColor = np.array([(k-2)*255/4/0.7, 255, 0, 255])
+            elif k >= 1.3 and k < 2:
+                barsColor = np.array([0, 255, (2-k)*255/0.7, 255])
+            elif k < 1.3:
+                barsColor = np.array([0, k*255/1.3, 255, 255])
+            print(k)
+            
+            
+        Legend[round(1.5*barSize*(steps-1-i)):round(1.5*barSize*(steps-1-i)+barSize), :barSize*3] = barsColor
+
+        drawText.text((0,round(1.5*barSize*(steps-1-i))), " "+str(round((i/(steps-1))*(lenth[1]-lenth[0])+lenth[0], textRound)), font=font)
+    
+    textLegend = np.array(imText)
+    out = np.concatenate((Legend, textLegend), axis=1)
+
+    return out
+    
+            
+    #print(agenda)
+
 
 #Debugging function to see where the points are placed
 def ShowPoints(Points):
@@ -88,6 +152,6 @@ def ShowPoints(Points):
         imageArr[x["Pixel"][1]][x["Pixel"][0]-1] = [255, 0, 0, 255]
     PIL.Image.fromarray(imageArr).show()
 
-arr = SmoothGpu(mapData)
+arr = SmoothGpu(mapData, 1)
 PIL.Image.fromarray(arr).show()
 

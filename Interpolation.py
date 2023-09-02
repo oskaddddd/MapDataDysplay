@@ -55,7 +55,7 @@ class createPixel():
         for i, simplex in enumerate(tri.simplices):
             triangle = [np.array([points[index][0], points[index][1], p[index]]) for index in simplex]
             output[i] = triangle
-        print(output)
+        #print(output)
 
         #output = np.array(output)
         
