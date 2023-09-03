@@ -59,7 +59,7 @@ print(time.time()-t2)
 
 
 #Interpolation Function on the gpu
-def SmoothGpu(points, Mode, Agenda = True, agendaAlignmentHor = 0, agendaAlignmentVer = 0):
+def SmoothGpu(points, Mode, Agenda = True, agendaAlignment = 0, agendaOffset = 0,  agendaScale = 1, agendaSteps = 6, agendaTextScale = 0.5, agendaRoundDataTo = 3):
     '''agenda alignment horizontal:\n
 0 - bottom,\n
 1 - middle, \n
@@ -84,7 +84,7 @@ agenda alignment vertical:\n
     print(time.time()-t, time.time()-t1)
     
     if Agenda == True:
-        AgendaObj = CreateLegend((l, m), Mode, image.size, 0.6, 8)
+        AgendaObj = CreateLegend((l, m), Mode, image.size, agendaScale, agendaSteps,  agendaTextScale, agendaRoundDataTo)
         filer = np.zeros((res.shape[0]-AgendaObj.shape[0], AgendaObj.shape[1], 4))
         res = np.concatenate((res, np.concatenate((filer, AgendaObj), axis=0)), axis = 1)
         #if agendaAlignmentHor == 0:
@@ -130,7 +130,7 @@ def CreateLegend(lenth, Mode, dimentions, scale, steps, textScale = 0.9, textRou
             
         Legend[round(1.5*barSize*(steps-1-i)):round(1.5*barSize*(steps-1-i)+barSize), :barSize*3] = barsColor
 
-        drawText.text((0,round(1.5*barSize*(steps-1-i))), " "+str(round((i/(steps-1))*(lenth[1]-lenth[0])+lenth[0], textRound)), font=font)
+        drawText.text((0,round(1.5*barSize*(steps-1-i)+((barSize-(barSize*textScale))/2))), " "+str(round((i/(steps-1))*(lenth[1]-lenth[0])+lenth[0], textRound)), font=font)
     
     textLegend = np.array(imText)
     out = np.concatenate((Legend, textLegend), axis=1)
