@@ -1,3 +1,5 @@
 This tool tries to provide an easy way of representing data on maps, the input data is provided in the form of a json but there is a parser for excel files (atm it still needs some work, if the field in excel is not a a value but a formula is can not parse it). 
 
-To use the tool you first need to get a mask image of the map you'll want to use, its better if the map is one color. Input the name of the image file in ImageName.txt. Then run the preapere mask script. In the output image the map region should be fully collored and the areas around the map should be transparent. You can tweak the 
+To use the tool you first need to get a mask image of the map you'll want to use, its better if the map is one color. Input the name of the image file in ImageName.txt. Then run the preapere mask script. In the output image the map region should be fully collored and the areas around the map should be transparent. You can tweak the Inverse and Threashold values in PreapereMask.py till you have the desired result.
+
+Once you have the mask, you need to calibrate the map to real life coordinates. Run the Calibration script, with the mouse and arrow keys select a point on the map, open google maps  
