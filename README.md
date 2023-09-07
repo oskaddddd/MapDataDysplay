@@ -5,3 +5,7 @@ To use the tool you first need to get a mask image of the map you'll want to use
 Once you have the mask, you need to calibrate the map to real life coordinates. Run the Calibration script, with the mouse and arrow keys select a point on the map, then on google maps select the right click on the same point and copy the coordinates, paste them into the input field on the program and submit the points. Repeat for the second point. Its better if points are far appart horizontally and vertically.
 
 Then either parse the data from an excel file or import your json. And run the dataDysplay.py script. 
+
+This is still an alpha version so its usable but may have alot of bugs and isnt really polished. This is my school project.
+
+To use this tool you need to have python installed and these libs: pillow, tkinter, scypy, pyopencl, numpy, screeninfo, openpyxl
