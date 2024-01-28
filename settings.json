@@ -12,5 +12,5 @@
     "LegendUnits": "m/s",
     "Computation": "opencl",
     "SectionMap":false,
-    "Interpolation": "kjh"
+    "Interpolation": "idw"
 }

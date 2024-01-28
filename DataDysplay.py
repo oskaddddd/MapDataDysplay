@@ -74,6 +74,8 @@ def Interpolate(points):
     if settings["Computation"].lower() == 'opencl':
         if settings["Interpolation"].lower() == 'idw':
             creator = Interpolation.InterpolationIDW_GPU(False)
+            import QuadTree
+            QuadTree.build_quadtree
             creator.createBuffers(image.size, points)
             creator.compute()
         else:
