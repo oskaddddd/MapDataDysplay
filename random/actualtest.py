@@ -1,3 +1,3 @@
 import numpy as np
-
-print([x for x in range(4)])
+a = np.array([1, 2, 3, 4])
+print(a[:2])
