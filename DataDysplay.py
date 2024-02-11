@@ -59,7 +59,7 @@ for x in data:
 
 print(time.time()-t2, 'tdttddt')
 
-
+print(mapData)
 #Interpolation Function on the gpu
 def Interpolate(points):
     print(1)
@@ -79,20 +79,21 @@ def Interpolate(points):
             import QuadTree
             xPoints = points[:,0]
             yPoints = points[:,1]
-            print(xPoints)
+            
             xRange = [np.min(xPoints), np.max(xPoints)]
             yRange = [np.min(yPoints), np.max(yPoints)]
-            print(xRange)
-            tree = QuadTree.QuadTree(xRange, yRange, points)
+            print(xRange, yRange)
+            tree = QuadTree.QuadTree(points, xRange, yRange)
+            QuadTree.VisualizeTree(tree)
             creator.createBuffers(image.size, points)
             creator.compute()
         else:
-            creator = Interpolation.interpolateRandomGpu(False)
+            creator = Interpolation.interpolate_delauny_gpu(False)
             creator.createPixelBuffer(image.size, Image=image)
             lenth = (creator.createTriangles(points=points, Mode=Mode, showTriangles=False)[1:])
             res = creator.compute()
     else:
-        creator = Interpolation.interpolateRandomCpu()
+        creator = Interpolation.interpolate_delauny_cpu()
         o = creator.createTriangles(points, image.size, True, Image=np.array(image), Mode=Mode, doSectioning=settings["SectionMap"], sections=settings["Sections"])
         res = o[0]
         lenth = (o[1], o[2])
@@ -157,60 +158,7 @@ def Interpolate(points):
     #print(res)
     return res.astype(np.uint8)
 
-def InterpolateRandomCpu(points):
-    points = np.array(points)
-    create = Interpolation.interpolateRandomCpu()
-    #print(create.createPixels(image.size, Image=image))
-    return create.createTriangles(points, image.size, True, Image=np.array(image))
-    
 
-def CreateLegend(lenth, Mode, dimentions, scale, steps, textScale, textRound, units):
-    barSize = round(dimentions[1]/(1.5*steps - 0.5)*scale)
-    Legend = np.zeros((round(steps*barSize*1.5-barSize*0.5), 3*barSize, 4), dtype=np.uint8)
-    
-    units = ' '+units
-    
-    textLegend = np.zeros((round(steps*barSize*1.5-barSize*0.5), round(barSize*0.59*textScale*(textRound+len(str(round(lenth[1]))+units)))+10 + (8 if textRound != 0 else 0), 4), dtype=np.uint8)
-
-    print(barSize*textScale, 'wad')
-    imText = PIL.Image.fromarray(textLegend)
-    drawText = PIL.ImageDraw.Draw(imText)
-
-    font = PIL.ImageFont.truetype("arial.ttf", round(barSize*textScale))
-    
-    for i in range(steps):
-        
-        barsColor = None
-        if Mode == 0:
-            val = round(255*(i/(steps-1)))
-            
-            barsColor = np.array([val, val, val, 255])
-            #print(barsColor, round(1.5*barSize*(steps-1-i)+barSize), round(1.5*barSize*(steps-1-i)), i/(steps-1), agenda.shape)
-        elif Mode == 1:
-            k = i/(steps-1)*4
-            
-            if k >= 2.7:
-                barsColor = np.array([255, (4-k)*255/1.3, 0, 255])
-            elif k >= 2 and k < 2.7:
-                barsColor = np.array([(k-2)*255/4/0.7, 255, 0, 255])
-            elif k >= 1.3 and k < 2:
-                barsColor = np.array([0, 255, (2-k)*255/0.7, 255])
-            elif k < 1.3:
-                barsColor = np.array([0, k*255/1.3, 255, 255])
-            print(k)
-            
-            
-        Legend[round(1.5*barSize*(steps-1-i)):round(1.5*barSize*(steps-1-i)+barSize), :barSize*3] = barsColor
-
-        drawText.text((0,round(1.5*barSize*(steps-1-i)+((barSize-(barSize*textScale))/2))), " "+str(round((i/(steps-1))*(lenth[1]-lenth[0])+lenth[0], textRound))+units, font=font)
-    
-    textLegend = np.array(imText)
-    out = np.concatenate((Legend, textLegend), axis=1, dtype=np.uint8)
-
-    return out
-    
-            
-    #print(agenda)
 
 
 #Debugging function to see where the points are placed

@@ -1,12 +1,12 @@
 from PIL import Image
 import json
 
-imageName = ''
-with open('ImageName.txt', 'r') as f:
-    imageName = f.read()
-    imageName = imageName[:imageName.index('.')+1]+'png' \
-    if imageName[imageName.index('.')+1:] != 'png' \
-    else imageName
+imageName = 'mask1.png'
+#with open('ImageName.txt', 'r') as f:
+#    imageName = f.read()
+#    imageName = imageName[:imageName.index('.')+1]+'png' \
+#    if imageName[imageName.index('.')+1:] != 'png' \
+#    else imageName
 image = Image.open(imageName)
 s = image.size
 

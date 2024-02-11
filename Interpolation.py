@@ -7,7 +7,7 @@ os.environ['PYOPENCL_NO_CACHE'] = '1'
 
 
 
-class interpolateRandomGpu():
+class interpolate_delauny_gpu():
     def __init__(self, interactive = False) -> None:
         self.ctx = cl.create_some_context(interactive=interactive)
         self.queue = cl.CommandQueue(self.ctx)
@@ -85,8 +85,8 @@ class interpolateRandomGpu():
         return self.res
 
 
-class interpolateRandomCpu():
-
+class interpolate_delauny_cpu():
+    
     def createTriangles(self, points, resolution, clip = True, Image = None, Mode = 0, doSectioning = False, sections = 4):
         
 
@@ -95,7 +95,15 @@ class interpolateRandomCpu():
         1 - RGB (Red - high, Green - mid, Blue - low)\n
         2 - RG (Green - high, Red - Low)'''
         
+        import matplotlib.pyplot as plt
+        import matplotlib.patches as patches
         
+        fig, ax = plt.subplots()
+
+        ax.set_xlim(-100, 2000)
+        ax.set_ylim(-100, 1500)
+
+
         #ogPoints = points.copy()
         p = points[:, 2]
         
@@ -122,6 +130,7 @@ class interpolateRandomCpu():
             triangle = [np.array([points[index][0], points[index][1], p[index]]) for index in simplex]
             output[i] = triangle
 
+        #ax.add_patch(patches.Polygon(output[0][:, :2], True, edgecolor='red', facecolor='none'))
         
         
         for triangle in output:
@@ -129,6 +138,7 @@ class interpolateRandomCpu():
             #if triangle[0][0]>= resolution[0]:
             #    break
             
+            ax.add_patch(patches.Polygon(triangle[:, :2], True, edgecolor='red', facecolor='none'))
             if triangle[1][0]-triangle[0][0]!= 0: 
                 k01 = (triangle[1][1]-triangle[0][1])/(triangle[1][0]-triangle[0][0])
             else: k01 = None
@@ -265,7 +275,9 @@ class interpolateRandomCpu():
         #output = np.array(output)
         
         self.triangles = output
-        return (imageOutput, m, l)
+        
+        plt.show()
+        return (imageOutput, m, l, ax)
 
 
         

@@ -22,7 +22,7 @@ class Node:
         return out
 
 class QuadTree:
-    def __init__(self, points, xRange, yRange, samePointErrorHandling = 'max'):
+    def __init__(self, points, xRange, yRange):
         '''
         points - a numpy array of all the points to be inserted into the quad tree
 
@@ -30,13 +30,6 @@ class QuadTree:
         
         yRange - [min y value of all the point, max y value of all the points]
 
-        samePointErrorHandling - (isn't implemented yet) how the code should behave when it encounters 2 points in the same coordinate:
-            
-            max - takes the bigger value
-            
-            min - takes the smaller value
-            
-            avg - takes the mathematical average of the 2 values (if there are 3 or more points at the same coordinate might not return the correct value, since it would do avg(avg(val1, val2), val3))
         '''
         self.points = points
         self.debug = 0
@@ -45,7 +38,7 @@ class QuadTree:
         self.tree = [Node(xRange=xRange, yRange=yRange)]
         self.xRange = xRange
         self.yRange = yRange
-        self.speh = samePointErrorHandling
+
 
         #Add a 0 to the end of every embeded array (1, 1, 1) -> (1, 1, 1, 0)
         self.outPoints = np.append(points, np.zeros((points.shape[0], 1)), 1)
@@ -58,9 +51,9 @@ class QuadTree:
             log.debug('main - moving to next point...')
             self.InsertPoint(0, i)
         
-            if i % (progBar) == 0:
-                prog = ((i*steps)//len(points))
-                print(f'[{prog*"#"}{(steps-prog)*"."}] {i*100/len(points)}%', end='\r')
+            #if i % (progBar) == 0:
+            #    prog = ((i*steps)//len(points))
+            #    print(f'[{prog*"#"}{(steps-prog)*"."}] {i*100/len(points)}%', end='\r')
 
                 
 
@@ -140,6 +133,7 @@ class QuadTree:
         #Get the quad in which the parents point now lies
         childQuadIndex = self.GetQuad(self.tree[nodeIndex].mid, self.points[self.tree[nodeIndex].pointIndex])
         #Transfer the parents point to child and remove parents point
+        print(childQuadIndex, nodeIndex)
         childNodes[childQuadIndex].pointIndex = self.tree[nodeIndex].pointIndex    
         
         for x in range(4):
@@ -189,6 +183,7 @@ def add_rectangle(ax, x_range, y_range, edgecolor='red', facecolor='none'):
     - facecolor: Fill color of the rectangle (default: 'none')
     """
     # Create a rectangle patch
+    
     rectangle = patches.Rectangle((x_range[0], y_range[0]), x_range[1] - x_range[0], y_range[1] - y_range[0], edgecolor=edgecolor, facecolor=facecolor)
 
     # Add the rectangle patch to the axis
@@ -219,8 +214,6 @@ def VisualizeTree(tree:QuadTree, points:bool = True, nodes:bool = True):
 
 def Test(pointCount = 100, xRange = (-1000, 1000), yRange = (-1000, 1000), pointRange = (-1000, 1000), visuliazePoints = True, visuliazeNodes = True):
     points = np.random.randint(pointRange[0], pointRange[1], size=(pointCount, 3))
-    for x in range(10, 100):
-        points[x] = points[0]
     quad = QuadTree(points,xRange, yRange)
     
     VisualizeTree(quad, visuliazePoints, visuliazeNodes)
