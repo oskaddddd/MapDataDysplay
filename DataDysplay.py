@@ -73,7 +73,7 @@ def Interpolate(points):
     t = time.time()
     if settings["Computation"].lower() == 'opencl':
         if settings["Interpolation"].lower() == 'idw':
-            creator = Interpolation.InterpolationIDW_GPU(False)
+            #creator = Interpolation.InterpolationIDW_GPU(False)
 
     
             import QuadTree
@@ -85,8 +85,8 @@ def Interpolate(points):
             print(xRange, yRange)
             tree = QuadTree.QuadTree(points, xRange, yRange)
             QuadTree.VisualizeTree(tree)
-            creator.createBuffers(image.size, points)
-            creator.compute()
+            #creator.createBuffers(image.size, points)
+            #creator.compute()
         else:
             creator = Interpolation.interpolate_delauny_gpu(False)
             creator.createPixelBuffer(image.size, Image=image)
@@ -94,9 +94,10 @@ def Interpolate(points):
             res = creator.compute()
     else:
         creator = Interpolation.interpolate_delauny_cpu()
-        o = creator.createTriangles(points, image.size, True, Image=np.array(image), Mode=Mode, doSectioning=settings["SectionMap"], sections=settings["Sections"])
+        o = creator.createTriangles(points, image.size, True, Image=np.array(image), Mode=Mode, doSectioning=settings["SectionMap"], sections=settings["Sections"], MinMax=(settings["Min"], settings["Max"]) if settings["SetMaxMinManualy"] else None, MonocolorId=settings["MonocolorId"])
+
         res = o[0]
-        lenth = (o[1], o[2])
+        lenth = (o[2], o[1])
 
     print(time.time()-t)
     
@@ -118,13 +119,15 @@ def Interpolate(points):
 
         font = PIL.ImageFont.truetype("arial.ttf", round(barSize*textScale))
         #font = PIL.ImageFont.load_default()
+        #deez nutz
+        MonocolorId = settings['MonocolorId']
         for i in range(steps):
 
             barsColor = None
             if Mode == 0:
                 val = round(255*(i/(steps-1)))
 
-                barsColor = np.array([val, val, val, 255])
+                barsColor = np.array([val if MonocolorId[0] == 0 else MonocolorId[0], val if MonocolorId[1] == 0 else MonocolorId[1], val if MonocolorId[2] == 0 else MonocolorId[2], 255])
                 #print(barsColor, round(1.5*barSize*(steps-1-i)+barSize), round(1.5*barSize*(steps-1-i)), i/(steps-1), agenda.shape)
             elif Mode == 1:
                 k = i/(steps-1)*4

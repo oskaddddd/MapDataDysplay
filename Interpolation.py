@@ -87,7 +87,7 @@ class interpolate_delauny_gpu():
 
 class interpolate_delauny_cpu():
     
-    def createTriangles(self, points, resolution, clip = True, Image = None, Mode = 0, doSectioning = False, sections = 4):
+    def createTriangles(self, points, resolution, clip = True, Image = None, Mode = 0, doSectioning = False, sections = 4, MinMax = None, MonocolorId = None):
         
 
         '''Modes:\n
@@ -193,7 +193,7 @@ class interpolate_delauny_cpu():
                         val = sectionList[(np.abs(sectionList - val)).argmin()]
                     if Mode == 0:
                         val = (val-l)/dif
-                        imageOutput[y][x] = np.array([val, val, val, 255])
+                        imageOutput[y][x] = np.array([val if MonocolorId[0] == 0 else MonocolorId[0], val if MonocolorId[1] == 0 else MonocolorId[1], val if MonocolorId[2] == 0 else MonocolorId[2], 255])
                     elif Mode == 1:
                         val-=l
                         out = np.array((0, 0, 0, 255))
@@ -239,7 +239,7 @@ class interpolate_delauny_cpu():
                     #print(val)
                     if Mode == 0:
                         val = round((val-l)/dif)
-                        imageOutput[y][x] = np.array([val, val, val, 255])
+                        imageOutput[y][x] = np.array([val if MonocolorId[0] == 0 else MonocolorId[0], val if MonocolorId[1] == 0 else MonocolorId[1], val if MonocolorId[2] == 0 else MonocolorId[2], 255])
                     elif Mode == 1:
                         val-=l
                         out = np.array((0, 0, 0, 255))

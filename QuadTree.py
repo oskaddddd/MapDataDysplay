@@ -154,14 +154,18 @@ class QuadTree:
     def GetQuad(self, center, point):
         ##print(center, point)
         #Get the quadraint that a point belongs to acording to the center
-        if center[0] <= point[0] and center[1] < point[1]:
+
+        #REVIEW THIS LATER, IT SUQS
+        if center[0] <= point[0] and center[1] <= point[1]:
             return 0
-        elif center[0] > point[0] and center[1] <= point[1]:
+        elif center[0] > point[0] and center[1] < point[1]:
             return 1
-        elif center[0] >= point[0] and center[1] > point[1]:
+        elif center[0] >= point[0] and center[1] >= point[1]:
             return 2
-        elif center[0] < point[0] and center[1] >= point[1]:
+        elif center[0] < point[0] and center[1] > point[1]:
             return 3
+        else:
+            print(f'WHATA FUQ {center, point}')
         
 
 

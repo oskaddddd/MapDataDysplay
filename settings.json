@@ -10,7 +10,18 @@
     "LegendTextScale": 0.7,
     "LegendRoundDataTo": 1,
     "LegendUnits": "m/s",
-    "Computation": "opencl",
+    "Computation": "cpu",
     "SectionMap":false,
-    "Interpolation": "idw"
+    "Interpolation": "idw",
+
+    "SetMaxMinManualy": false,
+    "Max" :100,
+    "Min":0,
+
+    "MonocolorId":
+    [
+        67, 100, 150, 200
+    ]
+
+    
 }
