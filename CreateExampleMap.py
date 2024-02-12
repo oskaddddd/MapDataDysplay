@@ -4,7 +4,7 @@ from perlin_noise import PerlinNoise
 
 grid = False
 
-n = 200
+n = 5000
 corners = [[53.85405444949857, 20.840097270351063], [56.60326420819254, 27.22864675471188]]
 cy = sorted([corners[0][1], corners[1][1]])
 cx = sorted([corners[0][0], corners[1][0]])
@@ -28,16 +28,18 @@ if grid:
 
     nx = 1
     ny = 1
-
+    val = 10
     for xi in range(x2):
         for yi in range(y2):
-            arr.append({"GPS": [str(random.randrange(95, 105)/100*(xi/k1+min(cx))), str(random.randrange(95, 105)/100*(yi/k1+min(cy)))], "Value": int((noise([xi/k1*n, yi/k1*n])+1)*50)})
+            c1 = random.randrange(95, 105)/100*(xi/k1+min(cx))
+            c2 = random.randrange(95, 105)/100*(yi/k1+min(cy))
+            arr.append({"GPS": [str(c1), str(c2)], "Value": int((noise([c1*val, c2*val])))})
             #print([mx+kkx*xi, my+kky*yi])
 else:
     ran = [13, 60]
     cy = [int(cy[0]*10**10), int(cy[1]*10**10)]
     cx = [int(cx[0]*10**10), int(cx[1]*10**10)]
-    noise = PerlinNoise(octaves=7, seed=986792)
+    noise = PerlinNoise(octaves=3, seed=734582)
     x = 1
     for _ in range(n):
         

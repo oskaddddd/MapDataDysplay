@@ -3,6 +3,8 @@ import numpy as np
 from scipy.spatial import Delaunay
 import math
 import os
+import PIL.Image
+
 os.environ['PYOPENCL_NO_CACHE'] = '1'
 
 
@@ -86,59 +88,151 @@ class interpolate_delauny_gpu():
 
 
 class interpolate_delauny_cpu():
+
+    def __init__(self, points:np.ndarray, mask:PIL.Image.Image, colorMode = 1, MinMax = None, monocolorValues = None, clip = True):
+        #Seperate the values of the points from said points
+        self.pointValues = points[:, 2]
+        self.points = points[:, :2]
+
+        self.colorMode = colorMode
+        
+        #Determine the maximum and minimum value of the points
+        if MinMax == None:
+            self.minVal = math.floor(min(self.pointValues))
+            self.maxVal = math.ceil(max(self.pointValues))
+        else:
+            self.minVal = MinMax[0]
+            self.maxVal = MinMax[1]
+            
+
+        #Determines what shade of color will a value be
+        self.valueImpact = (self.maxVal-self.minVal)/255
+
+        #Create other class values
+        self.monocolorValues = monocolorValues
+        self.mask = mask
+        self.clip = clip
+        self.resolution = mask.size
+
+        self.mask = np.array(self.mask)
+
+        self.triangles = self.CreateTriangles()
+
+
+
+    def visualizeTriangles(self, xlim = (-100, 2000), ylim = (-100, 1500)):
+
+
+        import matplotlib.pyplot as plt
+        import matplotlib.patches as patches
+        fig, ax = plt.subplots()
+
+        ax.set_xlim(xlim[0], xlim[1])
+        ax.set_ylim(ylim[0], ylim[1])
+        for triangle in self.triangles:
+            ax.add_patch(patches.Polygon(triangle[:, :2], True, edgecolor='red', facecolor='none'))
+
+        plt.show()
+
+
     
-    def createTriangles(self, points, resolution, clip = True, Image = None, Mode = 0, doSectioning = False, sections = 4, MinMax = None, MonocolorId = None):
+    def CreateTriangles(self):
         
 
         '''Modes:\n
         0 - Black and White (white - high, black - low)\n
         1 - RGB (Red - high, Green - mid, Blue - low)\n
         2 - RG (Green - high, Red - Low)'''
-        
-        import matplotlib.pyplot as plt
-        import matplotlib.patches as patches
-        
-        fig, ax = plt.subplots()
 
-        ax.set_xlim(-100, 2000)
-        ax.set_ylim(-100, 1500)
+        self.colorMode
+        self.monocolorValues = self.monocolorValues
+        #Create the triangles from the points
+        triangles = Delaunay(self.points)
 
+        #Create the outputs for triangles
+        triangleOutput = np.empty((triangles.simplices.shape[0], 3, 3), dtype=np.int32)
 
-        #ogPoints = points.copy()
-        p = points[:, 2]
+        #Extract the triangles from the simplices (not sure what that is honestly)
+        for i, simplex in enumerate(triangles.simplices):
+            triangle = [np.array([self.points[index][0], self.points[index][1], self.pointValues[index]]) for index in simplex]
+            triangleOutput[i] = triangle
+
+        return triangleOutput
         
-        
-        points = points[:, :2]
-        
-        m = math.ceil(max(p))
-        l = math.floor(min(p))
-        dif = (m-l)/255
+    
 
-        sectionList = np.empty((6), dtype=np.int64)
-        if doSectioning:
-            sectionList[0:sections-1] = np.arange(0, m-l, (m-l)/(sections-1), dtype=np.uint8)
-            sectionList[sections-1] = m-l
+    def Interpolate(self):
 
-        print(sectionList, m-l)
+        #Create the outputs for the output image
+        imageOutput = np.zeros(shape=(self.resolution[1], self.resolution[0], 4), dtype = np.uint8)
 
-        tri = Delaunay(points)
-        
-        output = np.empty((tri.simplices.shape[0], 3, 3), dtype=np.int32)
-        imageOutput = np.zeros(shape=(resolution[1], resolution[0], 4), dtype = np.uint8)
+        def middle(a, b, c):
+                if b>=a and b<=c:
+                    return b
+                elif b<a:
+                    return a
+                else: return c
 
-        for i, simplex in enumerate(tri.simplices):
-            triangle = [np.array([points[index][0], points[index][1], p[index]]) for index in simplex]
-            output[i] = triangle
-
-        #ax.add_patch(patches.Polygon(output[0][:, :2], True, edgecolor='red', facecolor='none'))
-        
-        
-        for triangle in output:
-            triangle = triangle[triangle[:, 0].argsort()][::1]
-            #if triangle[0][0]>= resolution[0]:
-            #    break
+        def InterpolateLoop(xRange, kPart, kFull, rPart, rFull):
             
-            ax.add_patch(patches.Polygon(triangle[:, :2], True, edgecolor='red', facecolor='none'))
+            #Loop trough the middle and 1st or 2nd point
+            for x in range(xRange[0], xRange[1]):
+
+                #Calculate the Y coordinates for the givven X coordinates
+                yRange = [middle(0, math.ceil(kPart*x+rPart), self.resolution[1]), middle(0, math.ceil(kFull*x+rFull), self.resolution[1])]
+                
+
+
+                #Create a list of y coordinates  
+                yList = np.arange(start=min(yRange), stop = max(yRange))
+                for y in yList:
+                    if self.mask[y][x][3] == 0:
+                        continue
+
+                    a = abs(triangle[0][0]*(triangle[1][1]-y) + triangle[1][0]*(y-triangle[0][1]) + x*(triangle[0][1]-triangle[1][1]))
+                    b = abs(triangle[0][0]*(y-triangle[2][1]) + x*(triangle[2][1]-triangle[0][1]) + triangle[2][0]*(triangle[0][1]-y))
+                    c = abs(x*(triangle[1][1]-triangle[2][1]) + triangle[1][0]*(triangle[2][1]-y) + triangle[2][0]*(y-triangle[1][1]))
+                    val = (triangle[2][2]*a+triangle[1][2]*b+triangle[0][2]*c)/(a+b+c)
+
+                    if self.colorMode == 0:
+                        val = (val-self.minVal)/self.valueImpact
+                        imageOutput[y][x] = np.array([val if self.monocolorValues[0] == 0 else self.monocolorValues[0], val if self.monocolorValues[1] == 0 else self.monocolorValues[1], val if self.monocolorValues[2] == 0 else self.monocolorValues[2], 255])
+                    elif self.colorMode == 1:
+                        val-=self.minVal
+                        out = np.array((0, 0, 0, 255))
+                        self.pointValues = (self.maxVal-self.minVal)*0.25
+
+                        if (val >= self.pointValues*2.7):
+                            out[1] = round((((self.pointValues*4)-val)/(self.pointValues*1.3))*255)
+                            out[0] = 255
+                        
+                        elif (val >= self.pointValues*2 and val < self.pointValues*2.7):
+                            out[0] = round(((val-self.pointValues*2)/(self.pointValues*0.7))*255)
+                            out[1] = 255
+                        
+                        elif(val >= self.pointValues*1.3 and val < self.pointValues*2):
+                            out[2] = round(((2*self.pointValues-val)/(self.pointValues*0.7))*255)
+                            out[1] = 255
+                        
+                        if (val < self.pointValues*1.3):
+                            out[1] = round((val/(self.pointValues*1.3))*255)
+                            out[2] = 255
+                        imageOutput[y][x] = out
+
+
+
+        #Loop trought the triangles and calculate the values of each pixel in them
+        for triangle in self.triangles:
+
+            #Sort the triangle by its X coordinate in ascending order
+            triangle = triangle[triangle[:, 0].argsort()][::1]
+
+            #f(x) = k*x + r
+            #Find the kooficients of the functions for each edge of the triangle
+            k01 = 0
+            k12 = 0
+            k02 = 0
+
             if triangle[1][0]-triangle[0][0]!= 0: 
                 k01 = (triangle[1][1]-triangle[0][1])/(triangle[1][0]-triangle[0][0])
             else: k01 = None
@@ -147,10 +241,9 @@ class interpolate_delauny_cpu():
                 k12 = ((triangle[1][1]-triangle[2][1])/(triangle[1][0]-triangle[2][0])) 
             else: k12 = None
             
-            if triangle[2][0]-triangle[0][0]!= 0: 
-                k02 = ((triangle[0][1]-triangle[2][1])/(triangle[0][0]-triangle[2][0])) 
-            else: k02 = None
-
+            k02 = ((triangle[0][1]-triangle[2][1])/(triangle[0][0]-triangle[2][0])) 
+            
+            #Find the r in the function for each edge)
             r01 = 0
             r12 = 0
             r02 = 0
@@ -159,113 +252,61 @@ class interpolate_delauny_cpu():
                 r01 = triangle[1][1]-triangle[1][0]*k01
             if k12 != None:
                 r12 = triangle[1][1]-triangle[1][0]*k12
-            if k02 != None:
-                r02 = triangle[0][1]-triangle[0][0]*k02
+            r02 = triangle[0][1]-triangle[0][0]*k02
 
-            def middle(a, b, c):
-                if b>a and b<c:
-                    return b
-                elif b<a:
-                    return a
-                else: return c
-
-            xRanges = [middle(0, triangle[0][0], resolution[0]), \
-                    middle(0, triangle[1][0], resolution[0]), \
-                    middle(0, triangle[2][0], resolution[0])]
+            # X coordinates trough which to interpolate, replaces the out of bounds coordinates with 0 or resolution x
+            xRange = [middle(0, triangle[0][0], self.resolution[0]), \
+                    middle(0, triangle[1][0], self.resolution[0]), \
+                    middle(0, triangle[2][0], self.resolution[0])]
            
-
-            for x in range(xRanges[0], xRanges[1]):
-                yRange = [middle(0, math.ceil(k01*x+r01), resolution[1]), middle(0, math.ceil(k02*x+r02), resolution[1])]
-                if yRange[1]<yRange[0]:
-                    y0 = yRange[0]
-                    yRange[0] = yRange[1]
-                    yRange[1]= y0
-                yList = np.arange(start=yRange[0], stop = yRange[1])
-                for y in yList:
-                    if Image[y][x][3] == 0:
-                        continue
-
-                    a = abs(triangle[0][0]*(triangle[1][1]-y) + triangle[1][0]*(y-triangle[0][1]) + x*(triangle[0][1]-triangle[1][1]))
-                    b = abs(triangle[0][0]*(y-triangle[2][1]) + x*(triangle[2][1]-triangle[0][1]) + triangle[2][0]*(triangle[0][1]-y))
-                    c = abs(x*(triangle[1][1]-triangle[2][1]) + triangle[1][0]*(triangle[2][1]-y) + triangle[2][0]*(y-triangle[1][1]))
-                    val = (triangle[2][2]*a+triangle[1][2]*b+triangle[0][2]*c)/(a+b+c)
-                    if doSectioning:
-                        val = sectionList[(np.abs(sectionList - val)).argmin()]
-                    if Mode == 0:
-                        val = (val-l)/dif
-                        imageOutput[y][x] = np.array([val if MonocolorId[0] == 0 else MonocolorId[0], val if MonocolorId[1] == 0 else MonocolorId[1], val if MonocolorId[2] == 0 else MonocolorId[2], 255])
-                    elif Mode == 1:
-                        val-=l
-                        out = np.array((0, 0, 0, 255))
-                        p = (m-l)*0.25
-
-                        if (val >= p*2.7):
-                            out[1] = round((((p*4)-val)/(p*1.3))*255)
-                            out[0] = 255
-                        
-                        elif (val >= p*2 and val < p*2.7):
-                            out[0] = round(((val-p*2)/(p*0.7))*255)
-                            out[1] = 255
-                        
-                        elif(val >= p*1.3 and val < p*2):
-                            out[2] = round(((2*p-val)/(p*0.7))*255)
-                            out[1] = 255
-                        
-                        if (val < p*1.3):
-                            out[1] = round((val/(p*1.3))*255)
-                            out[2] = 255
-                        imageOutput[y][x] = out
-
-                #ranges[i] = np.array((x, math.ceil(k01*x+r01), math.floor(k02*x+r02)))
-                i+=1
-            for x in range(xRanges[1], xRanges[2]):
-                yRange = [middle(0, math.ceil(k12*x+r12), resolution[1]), middle(0, math.ceil(k02*x+r02), resolution[1])]
-                if yRange[1]<yRange[0]:
-                    y0 = yRange[0]
-                    yRange[0] = yRange[1]
-                    yRange[1]= y0
-                yList = np.arange(start=yRange[0], stop = yRange[1])
-                #print(yList[0], yList[yList.shape[0]-1], "ylistRanges")
-                for y in yList:
-                    if Image[y][x][3] == 0:
-                        continue
-                    
-                    a = abs(triangle[0][0]*(triangle[1][1]-y) + triangle[1][0]*(y-triangle[0][1]) + x*(triangle[0][1]-triangle[1][1]))
-                    b = abs(triangle[0][0]*(y-triangle[2][1]) + x*(triangle[2][1]-triangle[0][1]) + triangle[2][0]*(triangle[0][1]-y))
-                    c = abs(x*(triangle[1][1]-triangle[2][1]) + triangle[1][0]*(triangle[2][1]-y) + triangle[2][0]*(y-triangle[1][1]))
-                    val = (triangle[2][2]*a+triangle[1][2]*b+triangle[0][2]*c)/(a+b+c)
-                    if doSectioning:
-                        val = sectionList[(np.abs(sectionList - val)).argmin()]
-                    #print(val)
-                    if Mode == 0:
-                        val = round((val-l)/dif)
-                        imageOutput[y][x] = np.array([val if MonocolorId[0] == 0 else MonocolorId[0], val if MonocolorId[1] == 0 else MonocolorId[1], val if MonocolorId[2] == 0 else MonocolorId[2], 255])
-                    elif Mode == 1:
-                        val-=l
-                        out = np.array((0, 0, 0, 255))
-                        p = (m-l)*0.25
-
-                        if (val >= p*2.7):
-                            out[1] = round((((p*4)-val)/(p*1.3))*255)
-                            out[0] = 255
-                        
-                        elif (val >= p*2 and val < p*2.7):
-                            out[0] = round(((val-p*2)/(p*0.7))*255)
-                            out[1] = 255
-                        
-                        elif(val >= p*1.3 and val < p*2):
-                            out[2] = round(((2*p-val)/(p*0.7))*255)
-                            out[1] = 255
-                        
-                        if (val < p*1.3):
-                            out[1] = round((val/(p*1.3))*255)
-                            out[2] = 255
-                        imageOutput[y][x] = out
-                        
-
-
-                #ranges[i] = np.array((x, math.ceil(k12*x+r12), math.floor(k02*x+r02)))
-                i+=1
+            InterpolateLoop((xRange[0], xRange[1]), k01, k02, r01, r02)
+            InterpolateLoop((xRange[1], xRange[2]), k12, k02, r12, r02)
+        #    for x in range(xRange[1], xRange[2]):
+        #        yRange = [middle(0, math.ceil(k12*x+r12), self.resolution[1]), middle(0, math.ceil(k02*x+rFull), self.resolution[1])]
+        #        if yRange[1]<yRange[0]:
+        #            y0 = yRange[0]
+        #            yRange[0] = yRange[1]
+        #            yRange[1]= y0
+        #        yList = np.arange(start=yRange[0], stop = yRange[1])
+        #        #print(yList[0], yList[yList.shape[0]-1], "ylistRanges")
+        #        for y in yList:
+        #            if self.mask[y][x][3] == 0:
+        #                continue
+        #            
+        #            a = abs(triangle[0][0]*(triangle[1][1]-y) + triangle[1][0]*(y-triangle[0][1]) + x*(triangle[0][1]-triangle[1][1]))
+        #            b = abs(triangle[0][0]*(y-triangle[2][1]) + x*(triangle[2][1]-triangle[0][1]) + triangle[2][0]*(triangle[0][1]-y))
+        #            c = abs(x*(triangle[1][1]-triangle[2][1]) + triangle[1][0]*(triangle[2][1]-y) + triangle[2][0]*(y-triangle[1][1]))
+        #            val = (triangle[2][2]*a+triangle[1][2]*b+triangle[0][2]*c)/(a+b+c)
+        #            #print(val)
+        #            if self.colorMode == 0:
+        #                val = round((val-self.minVal)/self.valueImpact)
+        #                imageOutput[y][x] = np.array([val if self.monocolorValues[0] == 0 else self.monocolorValues[0], val if self.monocolorValues[1] == 0 else self.monocolorValues[1], val if self.monocolorValues[2] == 0 else self.monocolorValues[2], 255])
+        #            elif self.colorMode == 1:
+        #                val-=self.minVal
+        #                out = np.array((0, 0, 0, 255))
+        #                self.pointValues = (self.maxVal-self.minVal)*0.25
+#
+        #                if (val >= self.pointValues*2.7):
+        #                    out[1] = round((((self.pointValues*4)-val)/(self.pointValues*1.3))*255)
+        #                    out[0] = 255
+        #                
+        #                elif (val >= self.pointValues*2 and val < self.pointValues*2.7):
+        #                    out[0] = round(((val-self.pointValues*2)/(self.pointValues*0.7))*255)
+        #                    out[1] = 255
+        #                
+        #                elif(val >= self.pointValues*1.3 and val < self.pointValues*2):
+        #                    out[2] = round(((2*self.pointValues-val)/(self.pointValues*0.7))*255)
+        #                    out[1] = 255
+        #                
+        #                if (val < self.pointValues*1.3):
+        #                    out[1] = round((val/(self.pointValues*1.3))*255)
+        #                    out[2] = 255
+        #                imageOutput[y][x] = out
+        #                
+#
+#
+        #        #ranges[i] = np.array((x, math.ceil(k12*x+r12), math.floor(k02*x+r02)))
+        #        i+=1
             #print(triangle)
             #print(ranges, triangle, r01, r12, r02, k01)
             
@@ -274,10 +315,9 @@ class interpolate_delauny_cpu():
 
         #output = np.array(output)
         
-        self.triangles = output
         
-        plt.show()
-        return (imageOutput, m, l, ax)
+        
+        return (imageOutput, self.maxVal, self.minVal)
 
 
         

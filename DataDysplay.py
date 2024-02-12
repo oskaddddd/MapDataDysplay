@@ -6,6 +6,7 @@ import time
 import Interpolation
 import ReadSettings
 
+
 #Get image name
 
 
@@ -93,9 +94,9 @@ def Interpolate(points):
             lenth = (creator.createTriangles(points=points, Mode=Mode, showTriangles=False)[1:])
             res = creator.compute()
     else:
-        creator = Interpolation.interpolate_delauny_cpu()
-        o = creator.createTriangles(points, image.size, True, Image=np.array(image), Mode=Mode, doSectioning=settings["SectionMap"], sections=settings["Sections"], MinMax=(settings["Min"], settings["Max"]) if settings["SetMaxMinManualy"] else None, MonocolorId=settings["MonocolorId"])
-
+        creator = Interpolation.interpolate_delauny_cpu(points, image, Mode, None, settings['MonocolorId'], True)
+        #creator.visualizeTriangles()
+        o = creator.Interpolate()
         res = o[0]
         lenth = (o[2], o[1])
 

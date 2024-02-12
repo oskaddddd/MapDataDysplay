@@ -1,6 +1,6 @@
 {
     "ImageName": "mask1.png",
-    "Mode": 1,
+    "Mode": 0,
     "CreateLegend": true,
     "LegendVerticalAlignment": 0.9,
     "LegendHorizontalAlignment": "right",
@@ -14,13 +14,13 @@
     "SectionMap":false,
     "Interpolation": "idw",
 
-    "SetMaxMinManualy": false,
+    "SetMaxMinManualy": true,
     "Max" :100,
     "Min":0,
 
     "MonocolorId":
     [
-        67, 100, 150, 200
+        255, 0, 0
     ]
 
     
