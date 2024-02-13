@@ -15,7 +15,8 @@ class Node:
     def GetMid(self):
         self.mid = [(self.xRange[0]+(self.xRange[1]-self.xRange[0])//2), (self.yRange[0]+(self.yRange[1]-self.yRange[0])//2)]
     def All(self):
-        return [self.xRange,self.yRange, self.mid, self.quad, self.parent, self.children, self.pointIndex]
+        out = np.array([self.mid[0], self.mid[1], self.quad, self.pointIndex, self.parent, self.children[0], self.children[1], self.children[2], self.children[3]])
+        return out
     def Debug(self):
         out = ''
         out += f"xRang:{self.xRange}, yRang:{self.yRange}, Quad:{self.quad}, IsLeaf:{('False, indexes:' +str(self.children))if self.children[0]!= -1 else True}, HasPoint:{False if self.pointIndex == -1 else ('True, Index =' +str(self.pointIndex))}, Parent:{self.parent}"
@@ -170,7 +171,11 @@ class QuadTree:
 
 
     def Flatten(self, dtype: np.dtype = np.int16):
-        out = np.empty()
+        out = np.empty((9* len(self.tree)), dtype = dtype)
+        for i in range(len(self.tree)):
+            out[i*9:i*9+9] = self.tree[i].All()
+        return out
+
 
 
 

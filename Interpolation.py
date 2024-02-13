@@ -120,7 +120,7 @@ class interpolate_delauny_cpu():
 
 
 
-    def visualizeTriangles(self, xlim = (-100, 2000), ylim = (-100, 1500)):
+    def VisualizeTriangles(self, xlim = (-100, 2000), ylim = (-100, 1500)):
 
 
         import matplotlib.pyplot as plt
@@ -172,8 +172,8 @@ class interpolate_delauny_cpu():
                 elif b<a:
                     return a
                 else: return c
-
-        def InterpolateLoop(xRange, kPart, kFull, rPart, rFull):
+        #Run the interpolation loop trough the triangle
+        def InterpolateTriangle(xRange, kPart, kFull, rPart, rFull):
             
             #Loop trough the middle and 1st or 2nd point
             for x in range(xRange[0], xRange[1]):
@@ -188,12 +188,16 @@ class interpolate_delauny_cpu():
                 for y in yList:
                     if self.mask[y][x][3] == 0:
                         continue
-
+                    
+                    #Break the triangle into 3 by creating edge from curent point to vertecies of triangle
                     a = abs(triangle[0][0]*(triangle[1][1]-y) + triangle[1][0]*(y-triangle[0][1]) + x*(triangle[0][1]-triangle[1][1]))
                     b = abs(triangle[0][0]*(y-triangle[2][1]) + x*(triangle[2][1]-triangle[0][1]) + triangle[2][0]*(triangle[0][1]-y))
                     c = abs(x*(triangle[1][1]-triangle[2][1]) + triangle[1][0]*(triangle[2][1]-y) + triangle[2][0]*(y-triangle[1][1]))
+                    
+                    #Calculate the value of the pixel
                     val = (triangle[2][2]*a+triangle[1][2]*b+triangle[0][2]*c)/(a+b+c)
 
+                    #Colors
                     if self.colorMode == 0:
                         val = (val-self.minVal)/self.valueImpact
                         imageOutput[y][x] = np.array([val if self.monocolorValues[0] == 0 else self.monocolorValues[0], val if self.monocolorValues[1] == 0 else self.monocolorValues[1], val if self.monocolorValues[2] == 0 else self.monocolorValues[2], 255])
@@ -259,62 +263,9 @@ class interpolate_delauny_cpu():
                     middle(0, triangle[1][0], self.resolution[0]), \
                     middle(0, triangle[2][0], self.resolution[0])]
            
-            InterpolateLoop((xRange[0], xRange[1]), k01, k02, r01, r02)
-            InterpolateLoop((xRange[1], xRange[2]), k12, k02, r12, r02)
-        #    for x in range(xRange[1], xRange[2]):
-        #        yRange = [middle(0, math.ceil(k12*x+r12), self.resolution[1]), middle(0, math.ceil(k02*x+rFull), self.resolution[1])]
-        #        if yRange[1]<yRange[0]:
-        #            y0 = yRange[0]
-        #            yRange[0] = yRange[1]
-        #            yRange[1]= y0
-        #        yList = np.arange(start=yRange[0], stop = yRange[1])
-        #        #print(yList[0], yList[yList.shape[0]-1], "ylistRanges")
-        #        for y in yList:
-        #            if self.mask[y][x][3] == 0:
-        #                continue
-        #            
-        #            a = abs(triangle[0][0]*(triangle[1][1]-y) + triangle[1][0]*(y-triangle[0][1]) + x*(triangle[0][1]-triangle[1][1]))
-        #            b = abs(triangle[0][0]*(y-triangle[2][1]) + x*(triangle[2][1]-triangle[0][1]) + triangle[2][0]*(triangle[0][1]-y))
-        #            c = abs(x*(triangle[1][1]-triangle[2][1]) + triangle[1][0]*(triangle[2][1]-y) + triangle[2][0]*(y-triangle[1][1]))
-        #            val = (triangle[2][2]*a+triangle[1][2]*b+triangle[0][2]*c)/(a+b+c)
-        #            #print(val)
-        #            if self.colorMode == 0:
-        #                val = round((val-self.minVal)/self.valueImpact)
-        #                imageOutput[y][x] = np.array([val if self.monocolorValues[0] == 0 else self.monocolorValues[0], val if self.monocolorValues[1] == 0 else self.monocolorValues[1], val if self.monocolorValues[2] == 0 else self.monocolorValues[2], 255])
-        #            elif self.colorMode == 1:
-        #                val-=self.minVal
-        #                out = np.array((0, 0, 0, 255))
-        #                self.pointValues = (self.maxVal-self.minVal)*0.25
-#
-        #                if (val >= self.pointValues*2.7):
-        #                    out[1] = round((((self.pointValues*4)-val)/(self.pointValues*1.3))*255)
-        #                    out[0] = 255
-        #                
-        #                elif (val >= self.pointValues*2 and val < self.pointValues*2.7):
-        #                    out[0] = round(((val-self.pointValues*2)/(self.pointValues*0.7))*255)
-        #                    out[1] = 255
-        #                
-        #                elif(val >= self.pointValues*1.3 and val < self.pointValues*2):
-        #                    out[2] = round(((2*self.pointValues-val)/(self.pointValues*0.7))*255)
-        #                    out[1] = 255
-        #                
-        #                if (val < self.pointValues*1.3):
-        #                    out[1] = round((val/(self.pointValues*1.3))*255)
-        #                    out[2] = 255
-        #                imageOutput[y][x] = out
-        #                
-#
-#
-        #        #ranges[i] = np.array((x, math.ceil(k12*x+r12), math.floor(k02*x+r02)))
-        #        i+=1
-            #print(triangle)
-            #print(ranges, triangle, r01, r12, r02, k01)
-            
-
-            
-
-        #output = np.array(output)
-        
+            #Call the Interpolate triangle function for boths sides of  the triangle
+            InterpolateTriangle((xRange[0], xRange[1]), k01, k02, r01, r02)
+            InterpolateTriangle((xRange[1], xRange[2]), k12, k02, r12, r02)
         
         
         return (imageOutput, self.maxVal, self.minVal)
@@ -322,35 +273,46 @@ class interpolate_delauny_cpu():
 
         
 class InterpolationIDW_GPU():
-    def __init__(self, interactive = False) -> None:
+    def __init__(self, points, image:PIL.Image.Image, tree:np.ndarray,  maxPPP = None, interactive = False) -> None:
         self.ctx = cl.create_some_context(interactive=interactive)
         self.queue = cl.CommandQueue(self.ctx)
         self.mf = cl.mem_flags
-    def createBuffers(self, resolution = None, Points = None, MaxPPP = None) -> list: #width, height
+
+        self.points = points
+        self.resolution = image.size
+        self.image = np.array(image)
+        self.tree = tree
+        #Check if max points per pixel is more than there are points
+        if maxPPP == None:
+            maxPPP = len(self.points)
+        elif maxPPP > len(self.points):
+            maxPPP = len(self.points)
+        self.maxPPP = maxPPP
+
+        self.createBuffers()
+
+    def createBuffers(self) -> list: #width, height
         #resolution = [2, 4]
-        MaxPPP = 3
-        self.resolution = resolution
-        #Check if max points per pixel is more than there are points, This helps reduce memory usage in some cases
-        if MaxPPP == None:
-            MaxPPP = len(Points)
-        elif MaxPPP > len(Points):
-            MaxPPP = len(Points)
+
+        self.resolution = 0
             
         #Dimentions of the distance data - known points; y; x;
         #Create array to store distances form pixels to known points
-        self.dist = np.full((MaxPPP, resolution[0], resolution[1], 2),-1, dtype=np.float32)
-        print(self.dist.nbytes)
+
+        #self.dist = np.full((self.maxPPP, self.resolution[0], self.resolution[1], 2),-1, dtype=np.float32)
+        #print(self.dist.nbytes)
         
-        Points = Points.astype(np.int16)
+        self.points = self.points.astype(np.uint16)
+        
         
         #Create the buffers
-        self.distBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_WRITE, size = self.dist.nbytes)
-        self.pointsBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = Points.nbytes)
-        self.distShapeBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = np.array((MaxPPP, resolution[0], resolution[1], len(Points)), dtype=np.uint16).nbytes)
+        self.treeBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_WRITE, size = self.dist.nbytes)
+        self.pointsBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = self.points.nbytes)
+        #self.distShapeBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = np.array((self.maxPPP, self.resolution[0], self.resolution[1], len(Points)), dtype=np.uint16).nbytes)
         
         print(self.dist.nbytes*10**-9)
         #Copy the data to buffers in memory
-        cl.enqueue_copy(self.queue, self.pointsBuffer, Points)
+        cl.enqueue_copy(self.queue, self.pointsBuffer, self.points)
         cl.enqueue_copy(self.queue, self.distShapeBuffer, np.array(self.dist.shape, dtype=np.uint16))
     
 

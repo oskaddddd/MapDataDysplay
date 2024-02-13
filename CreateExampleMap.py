@@ -4,7 +4,7 @@ from perlin_noise import PerlinNoise
 
 grid = False
 
-n = 5000
+n = 70
 corners = [[53.85405444949857, 20.840097270351063], [56.60326420819254, 27.22864675471188]]
 cy = sorted([corners[0][1], corners[1][1]])
 cx = sorted([corners[0][0], corners[1][0]])

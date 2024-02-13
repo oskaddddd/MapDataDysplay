@@ -85,9 +85,9 @@ def Interpolate(points):
             yRange = [np.min(yPoints), np.max(yPoints)]
             print(xRange, yRange)
             tree = QuadTree.QuadTree(points, xRange, yRange)
-            QuadTree.VisualizeTree(tree)
-            #creator.createBuffers(image.size, points)
-            #creator.compute()
+            #QuadTree.VisualizeTree(tree)
+            treeFlat = tree.Flatten(dtype = np.int16)
+            
         else:
             creator = Interpolation.interpolate_delauny_gpu(False)
             creator.createPixelBuffer(image.size, Image=image)
