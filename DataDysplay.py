@@ -1,4 +1,4 @@
-from tkinter import *
+#from tkinter import *
 import PIL.Image, PIL.ImageDraw, PIL.ImageFont
 import numpy as np
 import json
@@ -85,7 +85,7 @@ def Interpolate(points):
             yRange = [np.min(yPoints), np.max(yPoints)]
             print(xRange, yRange)
             tree = QuadTree.QuadTree(points, xRange, yRange)
-            #QuadTree.VisualizeTree(tree)
+            QuadTree.VisualizeTree(tree)
             treeFlat = tree.Flatten(dtype = np.int16)
             
         else:

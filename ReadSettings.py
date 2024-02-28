@@ -10,4 +10,8 @@ def Settings(CorrectImageName = False):
             settings["ImageName"] == imageName
             print(imageName)
         return settings
+def WriteSettings(settings):
+    with open('settings.json', 'w') as f:
+        json.dump(settings, f)
+
     

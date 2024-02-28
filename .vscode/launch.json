@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": false,
-      "cwd": "/home/oskaras/Documents/Programing/MapDataDysplay",
-      "program": "/home/oskaras/Documents/Programing/MapDataDysplay/build/Debug/outDebug",
+      "cwd": "/home/oskaras/Documents/Programing/Visualizing-Geographical-Data",
+      "program": "/home/oskaras/Documents/Programing/Visualizing-Geographical-Data/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
