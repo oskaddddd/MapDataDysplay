@@ -13,7 +13,7 @@ inverse = False
 threashhold = 0
 
 settings = ReadSettings.Settings(False)
-imageName = settings["ImageName"]
+imageName = settings["image_name"]
 
 image = PIL.Image.open(imageName).convert('RGBA')
 defImageArr = np.array(image)
@@ -84,7 +84,7 @@ def SaveImage():
     if imageName[imageName.index('.')+1:] != 'png' \
     else imageName
     image.save(imageName)
-    settings["ImageName"] = imageName
+    settings["image_name"] = imageName
     with open('settings.json', 'w')as f:
         json.dump(settings, f, indent=4)
     print("SavedImage")

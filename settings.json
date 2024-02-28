@@ -1,29 +1,24 @@
 {
     "image_name": "mask1.png",
     "mode": 1,
-
     "create_legend": true,
-    "legend_vertical_alignment": 0.9,
-    "legend_horizontal_alignment": "right",
-    "legend_offset": 30,
-    "legend_scale": 1,
-    "legend_section":10,
-    "text_scale": 0.7,
-    "legend_round_to": 1,
-    "legend_units": "m/s",
-    
-    "conputation_mode": "opencl",
-    "SectionMap":false,
-    "interpolation_mode": "idw",
-
-    "manual_max_min": true,
-    "max" :100,
-    "min":0,
-
-    "MonocolorId":
-    [
-        255, 0, 0
+    "vertical_position": 91,
+    "horizontal_alignment": "right",
+    "offset": 14,
+    "scale": 92,
+    "sections": 0,
+    "text_scale": 95,
+    "round_to": 9,
+    "units": "m^2",
+    "computation": "cpu",
+    "SectionMap": false,
+    "interpolation": "idw",
+    "manual_max_min": false,
+    "max": 16,
+    "min": 0,
+    "MonocolorId": [
+        255,
+        0,
+        0
     ]
-
-    
 }

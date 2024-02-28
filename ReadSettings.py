@@ -12,6 +12,6 @@ def Settings(CorrectImageName = False):
         return settings
 def WriteSettings(settings):
     with open('settings.json', 'w') as f:
-        json.dump(settings, f)
+        json.dump(settings, f, indent=4)
 
     

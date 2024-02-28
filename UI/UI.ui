@@ -71,35 +71,18 @@
             <property name="text">
              <string>Color mode</string>
             </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QComboBox" name="mode_dropdown">
-            <property name="whatsThis">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;test&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <property name="buddy">
+             <cstring>mode_dropdown</cstring>
             </property>
-            <property name="currentText">
-             <string/>
-            </property>
-            <property name="placeholderText">
-             <string>color mode</string>
-            </property>
-            <item>
-             <property name="text">
-              <string>RGB</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Monocolor</string>
-             </property>
-            </item>
            </widget>
           </item>
           <item row="2" column="0">
            <widget class="QLabel" name="label_6">
             <property name="text">
              <string>Computation mode</string>
+            </property>
+            <property name="buddy">
+             <cstring>computation_dropdown</cstring>
             </property>
            </widget>
           </item>
@@ -127,6 +110,9 @@
            <widget class="QLabel" name="label_7">
             <property name="text">
              <string>Interpolation mode</string>
+            </property>
+            <property name="buddy">
+             <cstring>interpolation_dropdown</cstring>
             </property>
            </widget>
           </item>
@@ -159,21 +145,20 @@
           </item>
           <item row="4" column="1">
            <widget class="QGroupBox" name="groupBox_2">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="title">
              <string/>
             </property>
             <layout class="QGridLayout" name="gridLayout_4">
              <item row="0" column="1">
-              <widget class="QLineEdit" name="min_input">
-               <property name="placeholderText">
-                <string>0</string>
+              <widget class="QSpinBox" name="min_input">
+               <property name="minimum">
+                <number>-2147483647</number>
                </property>
-              </widget>
-             </item>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_3">
-               <property name="text">
-                <string>Min</string>
+               <property name="maximum">
+                <number>2147483647</number>
                </property>
               </widget>
              </item>
@@ -182,22 +167,58 @@
                <property name="text">
                 <string>Max</string>
                </property>
+               <property name="buddy">
+                <cstring>max_input</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_3">
+               <property name="text">
+                <string>Min</string>
+               </property>
+               <property name="buddy">
+                <cstring>min_input</cstring>
+               </property>
               </widget>
              </item>
              <item row="1" column="1">
-              <widget class="QLineEdit" name="max_input">
-               <property name="enabled">
-                <bool>true</bool>
+              <widget class="QSpinBox" name="max_input">
+               <property name="minimum">
+                <number>-2147483647</number>
                </property>
-               <property name="frame">
-                <bool>true</bool>
+               <property name="maximum">
+                <number>2147483647</number>
                </property>
-               <property name="placeholderText">
-                <string>100</string>
+               <property name="stepType">
+                <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
                </property>
               </widget>
              </item>
             </layout>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QComboBox" name="mode_dropdown">
+            <property name="whatsThis">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;test&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="currentText">
+             <string/>
+            </property>
+            <property name="placeholderText">
+             <string>color mode</string>
+            </property>
+            <item>
+             <property name="text">
+              <string>Monocolor</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>RGB</string>
+             </property>
+            </item>
            </widget>
           </item>
          </layout>
@@ -235,12 +256,18 @@
                <property name="text">
                 <string>Offset from map (px)</string>
                </property>
+               <property name="buddy">
+                <cstring>offset_input</cstring>
+               </property>
               </widget>
              </item>
              <item row="0" column="0">
               <widget class="QLabel" name="label_10">
                <property name="text">
                 <string>Side</string>
+               </property>
+               <property name="buddy">
+                <cstring>horizontal_alignment_dropdown</cstring>
                </property>
               </widget>
              </item>
@@ -249,12 +276,18 @@
                <property name="text">
                 <string>Units</string>
                </property>
+               <property name="buddy">
+                <cstring>units_input</cstring>
+               </property>
               </widget>
              </item>
              <item row="2" column="0">
               <widget class="QLabel" name="label_11">
                <property name="text">
-                <string>Scale</string>
+                <string>Scale (%)</string>
+               </property>
+               <property name="buddy">
+                <cstring>scale_input</cstring>
                </property>
               </widget>
              </item>
@@ -263,19 +296,28 @@
                <property name="text">
                 <string>Sections</string>
                </property>
+               <property name="buddy">
+                <cstring>sections_input</cstring>
+               </property>
               </widget>
              </item>
              <item row="1" column="0">
               <widget class="QLabel" name="label_9">
                <property name="text">
-                <string>Vertical position</string>
+                <string>Vertical position (%)</string>
+               </property>
+               <property name="buddy">
+                <cstring>vertical_position_input</cstring>
                </property>
               </widget>
              </item>
              <item row="3" column="0">
               <widget class="QLabel" name="label_15">
                <property name="text">
-                <string>Text scale</string>
+                <string>Text scale (%)</string>
+               </property>
+               <property name="buddy">
+                <cstring>text_scale_input</cstring>
                </property>
               </widget>
              </item>
@@ -327,7 +369,7 @@
               </widget>
              </item>
              <item row="0" column="1">
-              <widget class="QComboBox" name="legend_horizontal_alignment_dropdown">
+              <widget class="QComboBox" name="horizontal_alignment_dropdown">
                <property name="enabled">
                 <bool>true</bool>
                </property>
@@ -418,6 +460,9 @@
                <property name="text">
                 <string>Round to digits</string>
                </property>
+               <property name="buddy">
+                <cstring>round_to_input</cstring>
+               </property>
               </widget>
              </item>
              <item row="7" column="1">
@@ -444,12 +489,161 @@
      <x>0</x>
      <y>0</y>
      <width>820</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>mode_dropdown</tabstop>
+  <tabstop>computation_dropdown</tabstop>
+  <tabstop>interpolation_dropdown</tabstop>
+  <tabstop>manual_max_min_check</tabstop>
+  <tabstop>create_legend_check</tabstop>
+  <tabstop>horizontal_alignment_dropdown</tabstop>
+  <tabstop>vertical_position_slider</tabstop>
+  <tabstop>vertical_position_input</tabstop>
+  <tabstop>scale_slider</tabstop>
+  <tabstop>scale_input</tabstop>
+  <tabstop>text_scale_slider</tabstop>
+  <tabstop>text_scale_input</tabstop>
+  <tabstop>offset_input</tabstop>
+  <tabstop>sections_input</tabstop>
+  <tabstop>units_input</tabstop>
+  <tabstop>round_to_input</tabstop>
+  <tabstop>save_settings_button</tabstop>
+ </tabstops>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>manual_max_min_check</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>groupBox_2</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>86</x>
+     <y>241</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>192</x>
+     <y>270</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>vertical_position_slider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>vertical_position_input</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>690</x>
+     <y>246</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>753</x>
+     <y>244</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>vertical_position_input</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>vertical_position_slider</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>762</x>
+     <y>249</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>693</x>
+     <y>245</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>scale_slider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>scale_input</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>696</x>
+     <y>276</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>762</x>
+     <y>282</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>scale_input</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>scale_slider</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>761</x>
+     <y>276</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>707</x>
+     <y>281</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>text_scale_slider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>text_scale_input</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>708</x>
+     <y>313</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>749</x>
+     <y>316</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>text_scale_input</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>text_scale_slider</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>757</x>
+     <y>306</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>701</x>
+     <y>312</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>create_legend_check</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>legend_settings</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>483</x>
+     <y>155</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>567</x>
+     <y>192</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>
