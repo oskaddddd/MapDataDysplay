@@ -3,11 +3,11 @@ def Settings(CorrectImageName = False):
     with open('settings.json', 'r') as f:
         settings = json.load(f)
         if CorrectImageName:
-            imageName = settings["ImageName"]
+            imageName = settings["image_name"]
             imageName = imageName[:imageName.index('.')+1]+'png' \
             if imageName[imageName.index('.')+1:] != 'png' \
             else imageName
-            settings["ImageName"] == imageName
+            settings["image_name"] == imageName
             print(imageName)
         return settings
 def WriteSettings(settings):

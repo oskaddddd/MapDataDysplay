@@ -6,11 +6,13 @@ import time
 import Interpolation
 import ReadSettings
 
+settings = ReadSettings.Settings(True)
+
 class create_map():
     def __init__(self) -> None:
-        self.settings = ReadSettings.Settings(True)
-        self.imageName = self.settings["ImageName"]
-
+        self.image = PIL.Image.open(settings['image_name'])
+        
+    #Calculates the values for all the points from data.json
     def Calibrate(self):
         #calibration
         cali = []
@@ -30,81 +32,98 @@ class create_map():
         cali[1]['GPS'].reverse()
 
         self.k = [(cali[0]['Pixel'][0]-cali[1]['Pixel'][0])/(float(cali[0]['GPS'][0])-float(cali[1]['GPS'][0])),
-             (cali[0]['Pixel'][1]-cali[1]['Pixel'][1])/(float(cali[0]['GPS'][1])-float(cali[1]['GPS'][1]))]
+                  (cali[0]['Pixel'][1]-cali[1]['Pixel'][1])/(float(cali[0]['GPS'][1])-float(cali[1]['GPS'][1]))]
         
         self.b = [cali[0]['Pixel'][0]-(self.k[0]*float(cali[0]['GPS'][0])),
-             cali[0]['Pixel'][1]-(self.k[1]*float(cali[0]['GPS'][1]))]
+                  cali[0]['Pixel'][1]-(self.k[1]*float(cali[0]['GPS'][1]))]
 
 
     def DecodeData(self):
+        #Read the data.json
         data = []
-
-        image = PIL.Image.open(self.imageName)
-
         with open('data.json', 'r') as f:
             data = json.load(f)
-        self.points = []
 
-        for point in data:
+        #Create the points array
+        self.points = np.empty((len(data), 3))
+
+        #Decode the data from data.json and add it to the points array
+        for i, point in enumerate(data):
             n = [round(float(point["GPS"][1])*self.k[0]+self.b[0]), round(float(point["GPS"][0])*self.k[1]+self.b[1])]
-            self.points.append([n[0], n[1], point["Value"]])
+            self.points[i] = np.array([n[0], n[1], point["Value"]])
         
+        #Write the points to a json file
         with open('points.json', 'w')as f:
-            json.dump(self.points, f, indent=4)
-        
+            print(self.points)
+            json.dump(self.points.tolist(), f, indent=4)
+    
+
+    #Read the points and tree data from a json
     def ReadData(self):
         with open('points.json', 'r')as f:
             self.points = json.load(f)
+        with open('tree.json', 'r')as f:
+            self.tree = json.load(f)
+
 
     def Interpolate(self):
 
-        points=np.array(points)
-        Mode = self.settings["Mode"]
-        lenth = None
-        res = None
-
+        mode = settings["mode"]
+        valueRange = None
+        output = None
+        
         t = time.time()
-        if self.settings["Computation"].lower() == 'opencl':
-            if self.settings["Interpolation"].lower() == 'idw':
-                #creator = Interpolation.InterpolationIDW_GPU(False)
-
-
+        
+        #Gpu computation
+        if settings["computation"].lower() == 'opencl':
+            #IDW interpolation on the gpu
+            if settings["interpolation"].lower() == 'idw':
                 import QuadTree
-                xPoints = points[:,0]
-                yPoints = points[:,1]
-
+                
+                #Get all the x and y coordinates of the points
+                xPoints = self.points[:,0]
+                yPoints = self.points[:,1]
+                
+                #Calculate the bounding box of the points
                 xRange = [np.min(xPoints), np.max(xPoints)]
                 yRange = [np.min(yPoints), np.max(yPoints)]
+                
                 print(xRange, yRange)
-                tree = QuadTree.QuadTree(points, xRange, yRange)
+                
+                #Build the tree form the points
+                tree = QuadTree.QuadTree(self.points, xRange, yRange)
                 QuadTree.VisualizeTree(tree)
                 treeFlat = tree.Flatten(dtype = np.int16)
-
+            
+            #Delauny triangulation on the gpu
             else:
+                #Do the interpolation
                 creator = Interpolation.interpolate_delauny_gpu(False)
-                creator.createPixelBuffer(image.size, Image=image)
-                lenth = (creator.createTriangles(points=points, Mode=Mode, showTriangles=False)[1:])
-                res = creator.compute()
+                creator.createPixelBuffer(self.image.size, Image=self.image)
+                valueRange = (creator.createTriangles(points=self.points, Mode=mode, showTriangles=False)[1:])
+                output = creator.compute()
+                
+        #Delauny interpolation on the cpu 
         else:
-            creator = Interpolation.interpolate_delauny_cpu(points, image, Mode, None, self.settings['MonocolorId'], True)
+            
+            creator = Interpolation.interpolate_delauny_cpu(self.points, self.image, mode, None, settings['MonocolorId'], True)
             #creator.visualizeTriangles()
             o = creator.Interpolate()
-            res = o[0]
-            lenth = (o[2], o[1])
-
-        print(time.time()-t)
-    def CreateLegendy(self):
-        if self.settings["CreateLegend"] == True:
-            steps = self.settings["Sections"]
-            textScale = self.settings["LegendTextScale"]
+            output = o[0]
+            valueRange = (o[2], o[1])
 
 
-            barSize = round(image.size[1]/(1.5*steps - 0.5)*self.settings["LegendScale"])
+        if settings["create_legend"] == True:
+            steps = settings["sections"]
+            textScale = settings["text_scale"]
+
+
+            barSize = round(self.image.size[1]/(1.5*steps - 0.5)*settings["scale"])
             Legend = np.zeros((round(steps*barSize*1.5-barSize*0.5), 3*barSize, 4), dtype=np.uint8)
 
-            units = ' '+self.settings["LegendUnits"]
+            units = ' '+settings["units"]
 
-            textLegend = np.zeros((round(steps*barSize*1.5-barSize*0.5), round(barSize*0.59*textScale*(self.settings["LegendRoundDataTo"]+len(str(round(lenth[1]))+units)))+10 + (8 if self.settings["LegendRoundDataTo"] != 0 else 0), 4), dtype=np.uint8)
+            textLegend = np.zeros((round(steps*barSize*1.5-barSize*0.5), round(barSize*0.59*textScale*(settings["round_to"]+len(str(round(valueRange[1]))+units)))+10 + (8 if settings["round_to"] != 0 else 0), 4), dtype=np.uint8)
 
             print(barSize*textScale, 'wad')
             imText = PIL.Image.fromarray(textLegend)
@@ -113,16 +132,16 @@ class create_map():
             font = PIL.ImageFont.truetype("arial.ttf", round(barSize*textScale))
             #font = PIL.ImageFont.load_default()
             #deez nutz
-            MonocolorId = self.settings['MonocolorId']
+            MonocolorId = settings['MonocolorId']
             for i in range(steps):
 
                 barsColor = None
-                if Mode == 0:
+                if mode == 0:
                     val = round(255*(i/(steps-1)))
 
                     barsColor = np.array([val if MonocolorId[0] == 0 else MonocolorId[0], val if MonocolorId[1] == 0 else MonocolorId[1], val if MonocolorId[2] == 0 else MonocolorId[2], 255])
                     #print(barsColor, round(1.5*barSize*(steps-1-i)+barSize), round(1.5*barSize*(steps-1-i)), i/(steps-1), agenda.shape)
-                elif Mode == 1:
+                elif mode == 1:
                     k = i/(steps-1)*4
 
                     if k >= 2.7:
@@ -138,39 +157,26 @@ class create_map():
 
                 Legend[round(1.5*barSize*(steps-1-i)):round(1.5*barSize*(steps-1-i)+barSize), :barSize*3] = barsColor
 
-                drawText.text((0,round(1.5*barSize*(steps-1-i)+((barSize-(barSize*textScale))/2))), " "+str(round((i/(steps-1))*(lenth[1]-lenth[0])+lenth[0], self.settings["LegendRoundDataTo"]))+units, font=font)
+                drawText.text((0,round(1.5*barSize*(steps-1-i)+((barSize-(barSize*textScale))/2))), " "+str(round((i/(steps-1))*(valueRange[1]-valueRange[0])+valueRange[0], settings["round_to"]))+units, font=font)
 
             textLegend = np.array(imText)
             AgendaObj = np.concatenate((Legend, textLegend), axis=1, dtype=np.uint8)
-            #AgendaObj = CreateLegend((l, m), settings["Mode"], image.size, legendScale, legendSteps,  legendTextScale, legendRoundDataTo, legendUnits)
-            #print(np.zeros((round((image.size[1]-AgendaObj.shape[0])*legendVerticalAlignment),  AgendaObj.shape[1], 4)).shape, AgendaObj.shape, np.zeros((round((image.size[1]-AgendaObj.shape[0])*(1-legendVerticalAlignment)),  AgendaObj.shape[1], 4)).shape,(image.size[1]-AgendaObj.shape[0])*legendVerticalAlignment, image.size[0])
-            AgendaObj = np.concatenate( ( np.zeros((round((image.size[1]-AgendaObj.shape[0])*self.settings["LegendVerticalAlignment"]),  AgendaObj.shape[1], 4), dtype = np.uint8),\
-            AgendaObj, np.zeros((image.size[1] - round((image.size[1]-AgendaObj.shape[0])*self.settings["LegendVerticalAlignment"]+AgendaObj.shape[0]),  AgendaObj.shape[1], 4),  dtype = np.uint8)))
+            
+            AgendaObj = np.concatenate( ( np.zeros((round((self.image.size[1]-AgendaObj.shape[0])*settings["vertical_position"]),  AgendaObj.shape[1], 4), dtype = np.uint8),\
+            AgendaObj, np.zeros((self.image.size[1] - round((self.image.size[1]-AgendaObj.shape[0])*settings["vertical_position"]+AgendaObj.shape[0]),  AgendaObj.shape[1], 4),  dtype = np.uint8)))
 
-            if self.settings["LegendHorizontalAlignment"].lower() == 'left':
-                res = np.concatenate((AgendaObj, np.zeros((AgendaObj.shape[0], self.settings["LegendOffsetFromMap"], 4)), res), axis = 1)
+            if settings["horizontal_alignment"].lower() == 'left':
+                output = np.concatenate((AgendaObj, np.zeros((AgendaObj.shape[0], settings["offset"], 4)), output), axis = 1)
             else:
-                res = np.concatenate((res,np.zeros((AgendaObj.shape[0], self.settings["LegendOffsetFromMap"], 4)), AgendaObj), axis = 1)
+                output = np.concatenate((output,np.zeros((AgendaObj.shape[0], settings["offset"], 4)), AgendaObj), axis = 1)
         #print(res)
-        return res.astype(np.uint8)
+        return output.astype(np.uint8)
 
-
-
-
-    #Debugging function to see where the points are placed
-    def ShowPoints(Points):
-        imageArr = np.array(image)
-        for x in Points:
-            imageArr[x["Pixel"][1]][x["Pixel"][0]] = [255, 0, 0, 255]
-            imageArr[x["Pixel"][1]+1][x["Pixel"][0]] = [255, 0, 0, 255]
-            imageArr[x["Pixel"][1]-1][x["Pixel"][0]] = [255, 0, 0, 255]
-            imageArr[x["Pixel"][1]][x["Pixel"][0]+1] = [255, 0, 0, 255]
-            imageArr[x["Pixel"][1]][x["Pixel"][0]-1] = [255, 0, 0, 255]
-        PIL.Image.fromarray(imageArr).show()
-
-    t = time.time()
-    #cpuArr = InterpolateRandomCpu(mapData)
-    print(time.time()-t)
-    arr = Interpolate(mapData)
-    PIL.Image.fromarray(arr).show()
+if __name__ == "__main__":
+    magic = create_map()
+    magic.Calibrate()
+    magic.DecodeData()
+    image = magic.Interpolate()
+    
+    PIL.Image.fromarray(image).show()
 

@@ -34,11 +34,11 @@ class Ui(QMainWindow):
         #Horizontal alignment
         self.horizontal_alignment_dropdown.setCurrentText(['Right', 'Left'][['right', 'left'].index(settings['horizontal_alignment'])])
         #Vertical position
-        self.vertical_position_slider.setValue(settings["vertical_position"])
+        self.vertical_position_slider.setValue(int(settings["vertical_position"]*100))
         #Scale
-        self.scale_slider.setValue(settings["scale"])
+        self.scale_slider.setValue(int(settings["scale"]*100))
         #Text scale
-        self.text_scale_slider.setValue(settings["text_scale"])
+        self.text_scale_slider.setValue(int(settings["text_scale"]*100))
         ##Offset
         self.offset_input.setValue(settings['offset'])
         ##sections
@@ -73,11 +73,11 @@ class Ui(QMainWindow):
         ##Horizontal alignment
         self.horizontal_alignment_dropdown.currentIndexChanged.connect(lambda data: self.change_setting(['right', 'left'][data], 'horizontal_alignment'))
         ##Vertical position
-        self.vertical_position_slider.valueChanged.connect(lambda data: self.change_setting(data, 'vertical_position'))
+        self.vertical_position_slider.valueChanged.connect(lambda data: self.change_setting(data/100, 'vertical_position'))
         ##Scale
-        self.scale_slider.valueChanged.connect(lambda data: self.change_setting(data, 'scale'))
+        self.scale_slider.valueChanged.connect(lambda data: self.change_setting(data/100, 'scale'))
         ##Text scale
-        self.text_scale_slider.valueChanged.connect(lambda data: self.change_setting(data, 'text_scale'))
+        self.text_scale_slider.valueChanged.connect(lambda data: self.change_setting(data/100, 'text_scale'))
         ##Offset
         self.offset_input.valueChanged.connect(lambda data: self.change_setting(data, 'offset'))
         ##Sections
