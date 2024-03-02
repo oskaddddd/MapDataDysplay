@@ -4,6 +4,9 @@ from PyQt5 import uic, QtCore
 import sys
 import qdarktheme
 from ReadSettings import *
+from DataDysplay import *
+
+import PIL.Image
 settings = Settings()
 
 class Ui(QMainWindow):
@@ -87,7 +90,11 @@ class Ui(QMainWindow):
         ##Round to
         self.round_to_input.valueChanged.connect(lambda data: self.change_setting(data, 'round_to'))
 
-
+        
+        #Load data button
+        self.load_data_button.clicked.connect(self.select_file)
+        #Create Button
+        self.create_button.clicked.connect(self.create_image)
         self.show()
     
 
@@ -95,9 +102,32 @@ class Ui(QMainWindow):
         print(data)
         settings[setting] = data
         
-
-app = QApplication(sys.argv)
-app.setStyle('Fusion')
-qdarktheme.setup_theme()
-window = Ui()
-app.exec_()
+    def create_image(self):
+        mapObj = create_map()
+        e = mapObj.ReadData()
+        if e != None:
+            self.error_message.setText(e)
+            return
+        output = mapObj.Interpolate()
+        PIL.Image.fromarray(output).show()
+    
+    def prepare_data(self):
+        file = self.select_file("Json files (.json)")
+        if file == None: return
+        data  = []
+        with open(file, 'r') as f:
+            data = json.load(f)
+        prepare_data(data)
+    
+    def select_file(self, fileType):
+        fileName, _ = QFileDialog.getOpenFileName(self, "Select data file", "", fileType, options=QFileDialog.Options())
+        print(fileName)
+        if fileName:
+            return fileName
+        
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    app.setStyle('Fusion')
+    qdarktheme.setup_theme()
+    window = Ui()
+    app.exec_()

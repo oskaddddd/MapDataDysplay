@@ -18,7 +18,33 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_2">
-    <item row="0" column="0" rowspan="2">
+    <item row="2" column="0">
+     <widget class="QLabel" name="error_message">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <spacer name="horizontalSpacer_2">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="0" column="0" rowspan="2" colspan="2">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
        <number>1</number>
@@ -484,7 +510,17 @@
         <string>Create</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_6">
-        <item row="0" column="0">
+        <item row="0" column="0" rowspan="3">
+         <widget class="QGraphicsView" name="graphicsView"/>
+        </item>
+        <item row="2" column="1">
+         <widget class="QPushButton" name="load_data_button">
+          <property name="text">
+           <string>Load data</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
          <widget class="QPushButton" name="create_button">
           <property name="text">
            <string>Create</string>
@@ -503,7 +539,7 @@
      <x>0</x>
      <y>0</y>
      <width>820</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>
@@ -529,7 +565,9 @@
   <tabstop>round_to_input</tabstop>
   <tabstop>save_settings_button</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="mask.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>manual_max_min_check</sender>

@@ -24,7 +24,7 @@ if grid:
 
     
 
-    noise = PerlinNoise(octaves=7, seed=986792)
+    noise = PerlinNoise(octaves=7, seed=random.randrange(1, 200000))
 
     nx = 1
     ny = 1
@@ -39,7 +39,7 @@ else:
     ran = [13, 60]
     cy = [int(cy[0]*10**10), int(cy[1]*10**10)]
     cx = [int(cx[0]*10**10), int(cx[1]*10**10)]
-    noise = PerlinNoise(octaves=3, seed=734582)
+    noise = PerlinNoise(octaves=3, seed=random.randrange(100, 100000))
     x = 1
     for _ in range(n):
         
