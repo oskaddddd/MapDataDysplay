@@ -1,10 +1,14 @@
-from PyQt5.QtWidgets import *
-from PyQt5 import uic, QtCore
+from PyQt6.QtWidgets import *
+from PyQt6 import uic, QtCore
+
+#from PyKDE6.kdeui import *
 
 import sys
 import qdarktheme
 from ReadSettings import *
 from DataDysplay import *
+
+import time
 
 import PIL.Image
 settings = Settings()
@@ -38,7 +42,7 @@ class Ui(QMainWindow):
         self.horizontal_alignment_dropdown.setCurrentText(['Right', 'Left'][['right', 'left'].index(settings['horizontal_alignment'])])
         #Vertical position
         self.vertical_position_slider.setValue(int(settings["vertical_position"]*100))
-        #Scale
+        #Scale   
         self.scale_slider.setValue(int(settings["scale"]*100))
         #Text scale
         self.text_scale_slider.setValue(int(settings["text_scale"]*100))
@@ -92,7 +96,7 @@ class Ui(QMainWindow):
 
         
         #Load data button
-        self.load_data_button.clicked.connect(self.select_file)
+        self.load_data_button.clicked.connect(self.prepare_data)
         #Create Button
         self.create_button.clicked.connect(self.create_image)
         self.show()
@@ -103,16 +107,18 @@ class Ui(QMainWindow):
         settings[setting] = data
         
     def create_image(self):
+        t = time.time()
         mapObj = create_map()
         e = mapObj.ReadData()
         if e != None:
             self.error_message.setText(e)
             return
         output = mapObj.Interpolate()
+        print('speed:', time.time()-t)
         PIL.Image.fromarray(output).show()
     
     def prepare_data(self):
-        file = self.select_file("Json files (.json)")
+        file = self.select_file("All (*);;Json files (*.json)")
         if file == None: return
         data  = []
         with open(file, 'r') as f:
@@ -120,7 +126,8 @@ class Ui(QMainWindow):
         prepare_data(data)
     
     def select_file(self, fileType):
-        fileName, _ = QFileDialog.getOpenFileName(self, "Select data file", "", fileType, options=QFileDialog.Options())
+        print(fileType)
+        fileName, _ = QFileDialog.getOpenFileName(self, "Select data file", "", fileType, options=QFileDialog.Option(1))
         print(fileName)
         if fileName:
             return fileName
@@ -130,4 +137,4 @@ if __name__ == "__main__":
     app.setStyle('Fusion')
     qdarktheme.setup_theme()
     window = Ui()
-    app.exec_()
+    app.exec()

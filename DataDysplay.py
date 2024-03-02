@@ -7,7 +7,7 @@ import Interpolation
 import ReadSettings
 import QuadTree
 
-settings = ReadSettings.Settings(True)
+
 
 def prepare_data(data = None):
     #calibration
@@ -31,10 +31,10 @@ def prepare_data(data = None):
     
     b = [cali[0]['Pixel'][0]-(k[0]*float(cali[0]['GPS'][0])),
         cali[0]['Pixel'][1]-(k[1]*float(cali[0]['GPS'][1]))]
-    print(data)
+    #print(data)
     if data == None:
         #Read the data.json
-        print(data)
+        #print(data)
         data = []
         with open('data.json', 'r') as f:
             data = json.load(f)
@@ -73,7 +73,8 @@ def prepare_data(data = None):
     
 class create_map():
     def __init__(self) -> None:
-        self.image = PIL.Image.open(settings['image_name'])
+        self.settings = ReadSettings.Settings(True)
+        self.image = PIL.Image.open(self.settings['image_name'])
         
         
     #Read the points and tree data from a json
@@ -93,16 +94,16 @@ class create_map():
 
     def Interpolate(self):
 
-        mode = settings["mode"]
+        mode = self.settings["mode"]
         valueRange = None
         output = None
         
         
         
         #Gpu computation
-        if settings["computation"].lower() == 'opencl':
+        if self.settings["computation"].lower() == 'opencl':
             #IDW interpolation on the gpu
-            if settings["interpolation"].lower() == 'idw':
+            if self.settings["interpolation"].lower() == 'idw':
                 pass
                 
             
@@ -117,25 +118,26 @@ class create_map():
         #Delauny interpolation on the cpu 
         else:
             
-            creator = Interpolation.interpolate_delauny_cpu(self.points, self.image, mode, None, settings['MonocolorId'], True)
+            creator = Interpolation.interpolate_delauny_cpu(self.points, self.image, mode, None, self.settings['MonocolorId'], True)
             #creator.visualizeTriangles()
             o = creator.Interpolate()
             output = o[0]
             valueRange = (o[2], o[1])
 
 
-        if settings["create_legend"] == True:
-            steps = settings["sections"]
-            textScale = settings["text_scale"]
-            barSize = round(self.image.size[1]/(1.5*steps - 0.5)*settings["scale"])
+        if self.settings["create_legend"] == True:
+            steps = self.settings["sections"]
+            textScale = self.settings["text_scale"]
+            barSize = round(self.image.size[1]/(1.5*steps - 0.5)*self.settings["scale"])
             
             #Create the legend output array
             Legend = np.zeros((round(steps*barSize*1.5-barSize*0.5), 3*barSize, 4), dtype=np.uint8)
 
-            units = ' '+settings["units"]
+            units = ' '+self.settings["units"]
 
             #Create the texts array
-            textLegend = np.zeros((round(steps*barSize*1.5-barSize*0.5), round(barSize*0.59*textScale*(settings["round_to"]+len(str(round(valueRange[1]))+units)))+10 + (8 if settings["round_to"] != 0 else 0), 4), dtype=np.uint8)
+            #round(barSize*0.59*textScale*(self.settings["round_to"]+len(str(round(valueRange[1]))+units)))+10 + (8 if self.settings["round_to"] != 0 else 0)
+            textLegend = np.zeros((round(steps*barSize*1.5-barSize*0.5), max(round(barSize * textScale) ), 4), dtype=np.uint8)
             
             #Turn the text array into an image and prapare it for drawing text onto it
             imText = PIL.Image.fromarray(textLegend)
@@ -143,8 +145,11 @@ class create_map():
 
             font = PIL.ImageFont.truetype("arial.ttf", round(barSize*textScale))
             
+            #Draw the text onto the the text image
+            drawText.text((0,round(1.5*barSize*(steps-1-i)+((barSize-(barSize*textScale))/2))), " "+str(round((i/(steps-1))*(valueRange[1]-valueRange[0])+valueRange[0], self.settings["round_to"]))+units, font=font)
+
             #Add the colored bars to the legend (NEEDS REDOING)
-            MonocolorId = settings['MonocolorId']
+            MonocolorId = self.settings['MonocolorId']
             for i in range(steps):
 
                 barsColor = None
@@ -163,32 +168,29 @@ class create_map():
                         barsColor = np.array([0, 255, (2-k)*255/0.7, 255])
                     elif k < 1.3:
                         barsColor = np.array([0, k*255/1.3, 255, 255])
-                    print(k)
+                    #print(k)
 
 
                 Legend[round(1.5*barSize*(steps-1-i)):round(1.5*barSize*(steps-1-i)+barSize), :barSize*3] = barsColor
 
-                #Draw the text onto the the text image
-                drawText.text((0,round(1.5*barSize*(steps-1-i)+((barSize-(barSize*textScale))/2))), " "+str(round((i/(steps-1))*(valueRange[1]-valueRange[0])+valueRange[0], settings["round_to"]))+units, font=font)
-
+                
             textLegend = np.array(imText)
             
             #Join the text and legend arrays into one object
             LegendObj = np.concatenate((Legend, textLegend), axis=1, dtype=np.uint8)
-            LegendObj = np.concatenate( ( np.zeros((round((self.image.size[1]-LegendObj.shape[0])*settings["vertical_position"]),  LegendObj.shape[1], 4), dtype = np.uint8),\
-            LegendObj, np.zeros((self.image.size[1] - round((self.image.size[1]-LegendObj.shape[0])*settings["vertical_position"]+LegendObj.shape[0]),  LegendObj.shape[1], 4),  dtype = np.uint8)))
+            LegendObj = np.concatenate( ( np.zeros((round((self.image.size[1]-LegendObj.shape[0])*self.settings["vertical_position"]),  LegendObj.shape[1], 4), dtype = np.uint8),\
+            LegendObj, np.zeros((self.image.size[1] - round((self.image.size[1]-LegendObj.shape[0])*self.settings["vertical_position"]+LegendObj.shape[0]),  LegendObj.shape[1], 4),  dtype = np.uint8)))
 
             #Join the image and legend
-            if settings["horizontal_alignment"].lower() == 'left':
-                output = np.concatenate((LegendObj, np.zeros((LegendObj.shape[0], settings["offset"], 4)), output), axis = 1)
+            if self.settings["horizontal_alignment"].lower() == 'left':
+                output = np.concatenate((LegendObj, np.zeros((LegendObj.shape[0], self.settings["offset"], 4)), output), axis = 1)
             else:
-                output = np.concatenate((output,np.zeros((LegendObj.shape[0], settings["offset"], 4)), LegendObj), axis = 1)
+                output = np.concatenate((output,np.zeros((LegendObj.shape[0], self.settings["offset"], 4)), LegendObj), axis = 1)
     
         return output.astype(np.uint8)
 
 if __name__ == "__main__":
     magic = create_map()
-    magic.Calibrate()
     #magic.DecodeData()
     magic.ReadData()
     t = time.time()
