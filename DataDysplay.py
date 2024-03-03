@@ -131,23 +131,19 @@ class create_map():
             barSize = round(self.image.size[1]/(1.5*steps - 0.5)*self.settings["scale"])
             
             #Create the legend output array
-            Legend = np.zeros((round(steps*barSize*1.5-barSize*0.5), 3*barSize, 4), dtype=np.uint8)
+            legend = np.zeros((round(steps*barSize*1.5-barSize*0.5), 3*barSize, 4), dtype=np.uint8)
 
             units = ' '+self.settings["units"]
 
             #Create the texts array
-            #round(barSize*0.59*textScale*(self.settings["round_to"]+len(str(round(valueRange[1]))+units)))+10 + (8 if self.settings["round_to"] != 0 else 0)
-            textLegend = np.zeros((round(steps*barSize*1.5-barSize*0.5), max(round(barSize * textScale) ), 4), dtype=np.uint8)
+            textLegend = np.zeros((round(steps*barSize*1.5-barSize*0.5), round(barSize*0.59*textScale*(self.settings["round_to"]+len(str(round(valueRange[1]))+units)))+10 + (8 if self.settings["round_to"] != 0 else 0), 4), dtype=np.uint8)
             
             #Turn the text array into an image and prapare it for drawing text onto it
-            imText = PIL.Image.fromarray(textLegend)
-            drawText = PIL.ImageDraw.Draw(imText)
+            textImage = PIL.Image.fromarray(textLegend)
+            textDrawing = PIL.ImageDraw.Draw(textImage)
 
             font = PIL.ImageFont.truetype("arial.ttf", round(barSize*textScale))
             
-            #Draw the text onto the the text image
-            drawText.text((0,round(1.5*barSize*(steps-1-i)+((barSize-(barSize*textScale))/2))), " "+str(round((i/(steps-1))*(valueRange[1]-valueRange[0])+valueRange[0], self.settings["round_to"]))+units, font=font)
-
             #Add the colored bars to the legend (NEEDS REDOING)
             MonocolorId = self.settings['MonocolorId']
             for i in range(steps):
@@ -171,13 +167,15 @@ class create_map():
                     #print(k)
 
 
-                Legend[round(1.5*barSize*(steps-1-i)):round(1.5*barSize*(steps-1-i)+barSize), :barSize*3] = barsColor
+                legend[round(1.5*barSize*(steps-1-i)):round(1.5*barSize*(steps-1-i)+barSize), :barSize*3] = barsColor
 
-                
-            textLegend = np.array(imText)
+                #Draw the text onto the the text image
+                textDrawing.text((0,round(1.5*barSize*(steps-1-i)+((barSize-(barSize*textScale))/2))), " "+str(round((i/(steps-1))*(valueRange[1]-valueRange[0])+valueRange[0], self.settings["round_to"]))+units, font=font)
+
+            textLegend = np.array(textImage)
             
             #Join the text and legend arrays into one object
-            LegendObj = np.concatenate((Legend, textLegend), axis=1, dtype=np.uint8)
+            LegendObj = np.concatenate((legend, textLegend), axis=1, dtype=np.uint8)
             LegendObj = np.concatenate( ( np.zeros((round((self.image.size[1]-LegendObj.shape[0])*self.settings["vertical_position"]),  LegendObj.shape[1], 4), dtype = np.uint8),\
             LegendObj, np.zeros((self.image.size[1] - round((self.image.size[1]-LegendObj.shape[0])*self.settings["vertical_position"]+LegendObj.shape[0]),  LegendObj.shape[1], 4),  dtype = np.uint8)))
 
