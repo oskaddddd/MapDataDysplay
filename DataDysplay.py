@@ -6,6 +6,7 @@ import time
 import Interpolation
 import ReadSettings
 import QuadTree
+import math
 
 
 
@@ -113,7 +114,7 @@ class create_map():
                 creator = Interpolation.interpolate_delauny_gpu(False)
                 creator.createPixelBuffer(self.image.size, Image=self.image)
                 valueRange = (creator.createTriangles(points=self.points, Mode=mode, showTriangles=False)[1:])
-                output = creator.compute()
+                output = creator.compute()  
                 
         #Delauny interpolation on the cpu 
         else:
@@ -125,74 +126,58 @@ class create_map():
             valueRange = (o[2], o[1])
 
 
-        if self.settings["create_legend"] == True:
-            steps = self.settings["sections"]
-            textScale = self.settings["text_scale"]
-            barSize = round(self.image.size[1]/(1.5*steps - 0.5)*self.settings["scale"])
-            
-            #Create the legend output array
-            legend = np.zeros((round(steps*barSize*1.5-barSize*0.5), 3*barSize, 4), dtype=np.uint8)
 
-            units = ' '+self.settings["units"]
-
-            #Create the texts array
-            textLegend = np.zeros((round(steps*barSize*1.5-barSize*0.5), round(barSize*0.59*textScale*(self.settings["round_to"]+len(str(round(valueRange[1]))+units)))+10 + (8 if self.settings["round_to"] != 0 else 0), 4), dtype=np.uint8)
-            
-            #Turn the text array into an image and prapare it for drawing text onto it
-            textImage = PIL.Image.fromarray(textLegend)
-            textDrawing = PIL.ImageDraw.Draw(textImage)
-
-            font = PIL.ImageFont.truetype("arial.ttf", round(barSize*textScale))
-            
-            #Add the colored bars to the legend (NEEDS REDOING)
-            MonocolorId = self.settings['MonocolorId']
-            for i in range(steps):
-
-                barsColor = None
-                if mode == 0:
-                    val = round(255*(i/(steps-1)))
-
-                    barsColor = np.array([val if MonocolorId[0] == 0 else MonocolorId[0], val if MonocolorId[1] == 0 else MonocolorId[1], val if MonocolorId[2] == 0 else MonocolorId[2], 255])
-                elif mode == 1:
-                    k = i/(steps-1)*4
-
-                    if k >= 2.7:
-                        barsColor = np.array([255, (4-k)*255/1.3, 0, 255])
-                    elif k >= 2 and k < 2.7:
-                        barsColor = np.array([(k-2)*255/4/0.7, 255, 0, 255])
-                    elif k >= 1.3 and k < 2:
-                        barsColor = np.array([0, 255, (2-k)*255/0.7, 255])
-                    elif k < 1.3:
-                        barsColor = np.array([0, k*255/1.3, 255, 255])
-                    #print(k)
-
-
-                legend[round(1.5*barSize*(steps-1-i)):round(1.5*barSize*(steps-1-i)+barSize), :barSize*3] = barsColor
-
-                #Draw the text onto the the text image
-                textDrawing.text((0,round(1.5*barSize*(steps-1-i)+((barSize-(barSize*textScale))/2))), " "+str(round((i/(steps-1))*(valueRange[1]-valueRange[0])+valueRange[0], self.settings["round_to"]))+units, font=font)
-
-            textLegend = np.array(textImage)
-            
-            #Join the text and legend arrays into one object
-            LegendObj = np.concatenate((legend, textLegend), axis=1, dtype=np.uint8)
-            LegendObj = np.concatenate( ( np.zeros((round((self.image.size[1]-LegendObj.shape[0])*self.settings["vertical_position"]),  LegendObj.shape[1], 4), dtype = np.uint8),\
-            LegendObj, np.zeros((self.image.size[1] - round((self.image.size[1]-LegendObj.shape[0])*self.settings["vertical_position"]+LegendObj.shape[0]),  LegendObj.shape[1], 4),  dtype = np.uint8)))
-
-            #Join the image and legend
-            if self.settings["horizontal_alignment"].lower() == 'left':
-                output = np.concatenate((LegendObj, np.zeros((LegendObj.shape[0], self.settings["offset"], 4)), output), axis = 1)
-            else:
-                output = np.concatenate((output,np.zeros((LegendObj.shape[0], self.settings["offset"], 4)), LegendObj), axis = 1)
     
         return output.astype(np.uint8)
+    def CreateLegend(self, maxMin):
+        numSections = self.settings['sections']
+        legendHeight = self.image.size[1]
+        sectionSize = 1
+        legend_padding = 0
+        sectionHeight = (legendHeight*self.settings['scale']) / (numSections/sectionSize)
+        
+        font_size = int(sectionHeight * self.settings['text_scale'])
+        font = PIL.ImageFont.truetype("arial.ttf", font_size)
+        roundTo = self.settings['round_to']
+        
+        maxTextWidth = [f'{f"%0.{roundTo}f"%maxMin[0]} {self.settings["units"]}',\
+                        f'{f"%0.{roundTo}f"%maxMin[1]} {self.settings["units"]}']
+        if len(maxTextWidth[0]) > len(maxTextWidth[1]): maxTextWidth = maxTextWidth[0]
+        else: maxTextWidth = maxTextWidth[1]
+        
+        
+        # Create a new image for the legend
+        legend_image = PIL.Image.new("RGB", (10, legendHeight), color="white")
+        draw = PIL.ImageDraw.Draw(legend_image)
+        legendWidth = math.ceil(draw.textlength(maxTextWidth, font))
+        
+        legend_image = legend_image.resize((legendWidth, legendHeight))
+        draw = PIL.ImageDraw.Draw(legend_image)
+        print(legendWidth)
+        # Draw sections with values and units
+        for i in range(numSections):
+            y_top = legend_padding + i * sectionHeight
+            y_bottom = y_top + sectionHeight
+            
+            value = i * 255/numSections
+            value_text = f'{f"%0.{roundTo}f"%value} {self.settings["units"]}'
+            draw.rectangle([(0, y_top), (legendWidth, y_bottom)], outline="black", fill='red')
+            draw.text((legend_padding, y_top), value_text, fill="black", font=font)
+
+        # Calculate position based on vertical alignment
+        y_position = int((self.image.size[1] - legend_image.size[1]) * self.settings['vertical_position'])
+
+        legend_image.show()
+
+        return self.image
+        
 
 if __name__ == "__main__":
     magic = create_map()
     #magic.DecodeData()
     magic.ReadData()
     t = time.time()
-    image = magic.Interpolate()
+    image = magic.CreateLegend((-225, 255))
     print('speed:', time.time()-t)
     
     PIL.Image.fromarray(image).show()
