@@ -132,41 +132,55 @@ class create_map():
     def CreateLegend(self, maxMin):
         numSections = self.settings['sections']
         legendHeight = self.image.size[1]
-        sectionSize = 1
-        legend_padding = 0
-        sectionHeight = (legendHeight*self.settings['scale']) / (numSections/sectionSize)
+        sectionSize = 0.7
         
-        font_size = int(sectionHeight * self.settings['text_scale'])
+        sectionHeight = (legendHeight*self.settings['scale']) / (numSections-(1-sectionSize))
+        
+        sectionWidth = 2
+        sectionWidth = sectionWidth*sectionHeight*sectionSize
+        
+        verticalPosition = 1 - self.settings['vertical_position']
+        verticalOffset = (1-self.settings['scale'])*verticalPosition*legendHeight
+        
+        font_size = int(sectionHeight * self.settings['text_scale']*sectionSize)
         font = PIL.ImageFont.truetype("arial.ttf", font_size)
         roundTo = self.settings['round_to']
         
-        maxTextWidth = [f'{f"%0.{roundTo}f"%maxMin[0]} {self.settings["units"]}',\
-                        f'{f"%0.{roundTo}f"%maxMin[1]} {self.settings["units"]}']
-        if len(maxTextWidth[0]) > len(maxTextWidth[1]): maxTextWidth = maxTextWidth[0]
-        else: maxTextWidth = maxTextWidth[1]
+        longestText = [f'{f"%0.{roundTo}f"%maxMin[0]} {self.settings["units"]}',\
+                       f'{f"%0.{roundTo}f"%maxMin[1]} {self.settings["units"]}']
+        if len(longestText[0]) > len(longestText[1]): longestText = longestText[0]
+        else: longestText = longestText[1]
         
         
         # Create a new image for the legend
-        legend_image = PIL.Image.new("RGB", (10, legendHeight), color="white")
-        draw = PIL.ImageDraw.Draw(legend_image)
-        legendWidth = math.ceil(draw.textlength(maxTextWidth, font))
+        legendWidth = math.ceil(font.getsize(longestText)[0]+sectionWidth)
         
-        legend_image = legend_image.resize((legendWidth, legendHeight))
+        legend_image = PIL.Image.new("RGB", (legendWidth, legendHeight), color="white")
         draw = PIL.ImageDraw.Draw(legend_image)
+        print(longestText)
         print(legendWidth)
+        textOffset = sectionHeight*sectionSize/5
         # Draw sections with values and units
         for i in range(numSections):
-            y_top = legend_padding + i * sectionHeight
-            y_bottom = y_top + sectionHeight
-            
-            value = i * 255/numSections
+            value = 255
             value_text = f'{f"%0.{roundTo}f"%value} {self.settings["units"]}'
-            draw.rectangle([(0, y_top), (legendWidth, y_bottom)], outline="black", fill='red')
-            draw.text((legend_padding, y_top), value_text, fill="black", font=font)
+            yTop = 0
+            yBottom = 0
+            if i == 0:
+                yTop = sectionHeight*sectionSize
+                yBottom = 0
+            else:
+                yBottom = sectionHeight*i
+                yTop = sectionHeight*sectionSize+yBottom
+            yTop += verticalOffset
+            yBottom += verticalOffset
+            draw.rectangle([(0, yTop), (sectionWidth, yBottom)], outline="black", fill='red')
+            print(yBottom)
+            draw.text((sectionWidth+textOffset, yBottom), value_text, fill="black", font=font)
 
         # Calculate position based on vertical alignment
         y_position = int((self.image.size[1] - legend_image.size[1]) * self.settings['vertical_position'])
-
+        print(textOffset)
         legend_image.show()
 
         return self.image
@@ -175,7 +189,7 @@ class create_map():
 if __name__ == "__main__":
     magic = create_map()
     #magic.DecodeData()
-    magic.ReadData()
+    #magic.ReadData()
     t = time.time()
     image = magic.CreateLegend((-225, 255))
     print('speed:', time.time()-t)
