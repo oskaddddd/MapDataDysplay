@@ -9,6 +9,8 @@
     "sections": 7,
     "text_scale": 1.0,
     "round_to": 0,
+    "bar_scale": 0.7, 
+    "bar_width": 2.5,
     "units": "m/s",
     "computation": "cpu",
     "SectionMap": false,

@@ -76,6 +76,9 @@ class create_map():
     def __init__(self) -> None:
         self.settings = ReadSettings.Settings(True)
         self.image = PIL.Image.open(self.settings['image_name'])
+        if self.settings['manual_max_min']:
+            self.maxMin = (self.settings['min'], self.settings['max'])
+        
         
         
     #Read the points and tree data from a json
@@ -96,7 +99,7 @@ class create_map():
     def Interpolate(self):
 
         mode = self.settings["mode"]
-        valueRange = None
+        self.maxMin = None
         output = None
         
         
@@ -113,7 +116,7 @@ class create_map():
                 #Do the interpolation
                 creator = Interpolation.interpolate_delauny_gpu(False)
                 creator.createPixelBuffer(self.image.size, Image=self.image)
-                valueRange = (creator.createTriangles(points=self.points, Mode=mode, showTriangles=False)[1:])
+                self.maxMin = (creator.createTriangles(points=self.points, Mode=mode, showTriangles=False)[1:])
                 output = creator.compute()  
                 
         #Delauny interpolation on the cpu 
@@ -123,65 +126,74 @@ class create_map():
             #creator.visualizeTriangles()
             o = creator.Interpolate()
             output = o[0]
-            valueRange = (o[2], o[1])
+            self.maxMin = (o[2], o[1])
 
 
 
     
         return output.astype(np.uint8)
-    def CreateLegend(self, maxMin):
+    def CreateLegend(self):
+        #Read and calculate all the variables from settings 
         numSections = self.settings['sections']
+        
+        barScale = self.settings['bar_scale']
+         
         legendHeight = self.image.size[1]
-        sectionSize = 0.7
-        
-        sectionHeight = (legendHeight*self.settings['scale']) / (numSections-(1-sectionSize))
-        
-        sectionWidth = 2
-        sectionWidth = sectionWidth*sectionHeight*sectionSize
+        sectionHeight = (legendHeight*self.settings['scale']) / (numSections-(1-barScale))
+        sectionWidth = self.settings["bar_width"]*sectionHeight*barScale
         
         verticalPosition = 1 - self.settings['vertical_position']
         verticalOffset = (1-self.settings['scale'])*verticalPosition*legendHeight
         
-        font_size = int(sectionHeight * self.settings['text_scale']*sectionSize)
+        font_size = int(sectionHeight * self.settings['text_scale']*barScale)
         font = PIL.ImageFont.truetype("arial.ttf", font_size)
+        
         roundTo = self.settings['round_to']
         
-        longestText = [f'{f"%0.{roundTo}f"%maxMin[0]} {self.settings["units"]}',\
-                       f'{f"%0.{roundTo}f"%maxMin[1]} {self.settings["units"]}']
+        #Find the longest posible text
+        longestText = [f'{f"%0.{roundTo}f"%self.maxMin[0]} {self.settings["units"]}',\
+                       f'{f"%0.{roundTo}f"%self.maxMin[1]} {self.settings["units"]}']
+        
         if len(longestText[0]) > len(longestText[1]): longestText = longestText[0]
         else: longestText = longestText[1]
         
         
-        # Create a new image for the legend
+        #Find the width of the legend based on the longest text
         legendWidth = math.ceil(font.getsize(longestText)[0]+sectionWidth)
         
-        legend_image = PIL.Image.new("RGB", (legendWidth, legendHeight), color="white")
-        draw = PIL.ImageDraw.Draw(legend_image)
-        print(longestText)
-        print(legendWidth)
-        textOffset = sectionHeight*sectionSize/5
+        #Create the legend image and the draw object
+        legendImage = PIL.Image.new("RGB", (legendWidth, legendHeight), color="white")
+        draw = PIL.ImageDraw.Draw(legendImage)
+        
+        #Calculate the offset of the text from the height of the bars
+        textOffset = sectionHeight*barScale/5
+        
         # Draw sections with values and units
         for i in range(numSections):
             value = 255
+            
+            #Get the text for this section
             value_text = f'{f"%0.{roundTo}f"%value} {self.settings["units"]}'
+            
+            #Calculate the boundries of the bar
             yTop = 0
             yBottom = 0
             if i == 0:
-                yTop = sectionHeight*sectionSize
+                yTop = sectionHeight*barScale
                 yBottom = 0
             else:
                 yBottom = sectionHeight*i
-                yTop = sectionHeight*sectionSize+yBottom
+                yTop = sectionHeight*barScale+yBottom
+                
             yTop += verticalOffset
             yBottom += verticalOffset
-            draw.rectangle([(0, yTop), (sectionWidth, yBottom)], outline="black", fill='red')
-            print(yBottom)
+            
+            #Draw the bar and the text next to it
+            draw.rectangle([(0, yBottom), (sectionWidth, yTop)], outline="black", fill=[0,0,0])
             draw.text((sectionWidth+textOffset, yBottom), value_text, fill="black", font=font)
 
-        # Calculate position based on vertical alignment
-        y_position = int((self.image.size[1] - legend_image.size[1]) * self.settings['vertical_position'])
-        print(textOffset)
-        legend_image.show()
+
+        legendImage.show()
 
         return self.image
         
@@ -191,7 +203,7 @@ if __name__ == "__main__":
     #magic.DecodeData()
     #magic.ReadData()
     t = time.time()
-    image = magic.CreateLegend((-225, 255))
+    image = magic.CreateLegend()
     print('speed:', time.time()-t)
     
     PIL.Image.fromarray(image).show()
