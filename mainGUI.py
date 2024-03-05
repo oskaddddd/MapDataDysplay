@@ -1,7 +1,6 @@
 from PyQt6.QtWidgets import *
 from PyQt6 import uic, QtCore
-
-#from PyKDE6.kdeui import *
+from PyQt5.QtGui import QPixmap, QImage
 
 import sys
 import qdarktheme
@@ -18,6 +17,7 @@ class Ui(QMainWindow):
         super(Ui, self).__init__()
         uic.loadUi('UI/UI.ui', self)
         
+    
 
         ##########
         #SETTINGS#
@@ -107,6 +107,7 @@ class Ui(QMainWindow):
         settings[setting] = data
         
     def create_image(self):
+        scene = QGraphicsScene()
         t = time.time()
         mapObj = create_map()
         e = mapObj.ReadData()
@@ -115,7 +116,17 @@ class Ui(QMainWindow):
             return
         output = mapObj.Interpolate()
         print('speed:', time.time()-t)
-        PIL.Image.fromarray(output).show()
+        
+        
+        qImage = QImage(output.tobytes(), output.size[0], output.size[1], QImage.Format_RGBA8888)
+        print(1)
+
+        pixmap = QPixmap.fromImage(qImage)
+        self.map_viewer.clear()
+        print(2)
+        self.map_viewer.addPixmap(pixmap)
+        #self.map_viewer(QGraphicsView())
+        #output.show()
     
     def prepare_data(self):
         file = self.select_file("All (*);;Json files (*.json)")
@@ -136,5 +147,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
     qdarktheme.setup_theme()
+    
     window = Ui()
     app.exec()
+    

@@ -129,10 +129,13 @@ class create_map():
             self.maxMin = (o[2], o[1])
 
 
-
+        if self.settings['create_legend']:
+            output = self.CreateLegend(PIL.Image.fromarray(output.astype(np.uint8)))
+            return output
+        else:
+            return PIL.Image.fromarray(output.astype(np.uint8))
     
-        return output.astype(np.uint8)
-    def CreateLegend(self):
+    def CreateLegend(self, image):
         #Read and calculate all the variables from settings 
         numSections = self.settings['sections']
         
@@ -161,16 +164,18 @@ class create_map():
         #Find the width of the legend based on the longest text
         legendWidth = math.ceil(font.getsize(longestText)[0]+sectionWidth)
         
+        #Calculate the offset of the text from the height of the bars
+        textOffset = math.ceil(sectionHeight*barScale/5)
+        
         #Create the legend image and the draw object
-        legendImage = PIL.Image.new("RGB", (legendWidth, legendHeight), color="white")
+        legendImage = PIL.Image.new("RGB", (self.image.size[0] + legendWidth+textOffset + self.settings['offset'], legendHeight), color=(0,0,0,0))
         draw = PIL.ImageDraw.Draw(legendImage)
         
-        #Calculate the offset of the text from the height of the bars
-        textOffset = sectionHeight*barScale/5
+        
         
         # Draw sections with values and units
         for i in range(numSections):
-            value = 255
+            value = self.maxMin[1]
             
             #Get the text for this section
             value_text = f'{f"%0.{roundTo}f"%value} {self.settings["units"]}'
@@ -189,21 +194,24 @@ class create_map():
             yBottom += verticalOffset
             
             #Draw the bar and the text next to it
-            draw.rectangle([(0, yBottom), (sectionWidth, yTop)], outline="black", fill=[0,0,0])
-            draw.text((sectionWidth+textOffset, yBottom), value_text, fill="black", font=font)
+            xStart = 0 if self.settings['horizontal_alignment'] == 'left' else self.image.size[0] + self.settings['offset']
+            draw.rectangle([(xStart, yBottom), (sectionWidth+xStart, yTop)], fill=(255,0,0, 0))
+            draw.text((sectionWidth+textOffset+xStart, yBottom), value_text, fill="white", font=font)
 
+            if self.settings['horizontal_alignment'] == 'left':
+                legendImage.paste(image, (legendWidth+textOffset+ self.settings['offset'], 0))
+            else:
+                legendImage.paste(image, (0, 0))
 
-        legendImage.show()
-
-        return self.image
+        return legendImage
         
 
 if __name__ == "__main__":
     magic = create_map()
     #magic.DecodeData()
-    #magic.ReadData()
+    magic.ReadData()
     t = time.time()
-    image = magic.CreateLegend()
+    image = PIL.Image.fromarray(magic.Interpolate())
     print('speed:', time.time()-t)
     
     PIL.Image.fromarray(image).show()
