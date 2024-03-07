@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import *
-from PyQt6 import uic, QtCore
-from PyQt5.QtGui import QPixmap, QImage
+from PyQt6 import uic
+from PyQt6.QtCore import QTimer
+from PyQt6.QtGui import QPixmap, QImage
 
 import sys
 import qdarktheme
@@ -16,6 +17,10 @@ class Ui(QMainWindow):
     def __init__(self):
         super(Ui, self).__init__()
         uic.loadUi('UI/UI.ui', self)
+        
+        self.map_scene = QGraphicsScene()
+        self.map_viewer.setScene(self.map_scene)
+        self.output = None
         
     
 
@@ -99,49 +104,80 @@ class Ui(QMainWindow):
         self.load_data_button.clicked.connect(self.prepare_data)
         #Create Button
         self.create_button.clicked.connect(self.create_image)
+        #Save image
+        self.save_image_button.clicked.connect(self.save_image)
         self.show()
+        
+        self.error_message_timer = QTimer()
+        self.error_message_timer.timeout.connect(lambda: self.error_message.setText(''))
+        
     
 
+    def save_image(self):
+        if self.output == None:
+            self.error_message.setText('Please create the image before saving it')
+            self.error_message_timer.start(3000)
+            return
+        file = self.select_file("Images (*.png)", "Save image", 'save', '.png')
+        self.output.save(file)
+        
+
+        
+    
+    
     def change_setting(self, data, setting):
         print(data)
         settings[setting] = data
         
     def create_image(self):
-        scene = QGraphicsScene()
+
         t = time.time()
         mapObj = create_map()
         e = mapObj.ReadData()
         if e != None:
             self.error_message.setText(e)
             return
-        output = mapObj.Interpolate()
+        self.output = mapObj.Interpolate()
         print('speed:', time.time()-t)
         
         
-        qImage = QImage(output.tobytes(), output.size[0], output.size[1], QImage.Format_RGBA8888)
+        qImage = QImage(self.output.tobytes(), self.output.size[0], self.output.size[1],QImage.Format.Format_RGBA8888)
         print(1)
 
         pixmap = QPixmap.fromImage(qImage)
-        self.map_viewer.clear()
+        print(3)
+        self.map_scene.clear()
+        self.map_scene.addPixmap(pixmap)
+        #self.map_viewer.shear()
         print(2)
-        self.map_viewer.addPixmap(pixmap)
+        
         #self.map_viewer(QGraphicsView())
         #output.show()
     
     def prepare_data(self):
-        file = self.select_file("All (*);;Json files (*.json)")
+        file = self.select_file("All (*);;Json files (*.json)", "Select data file", 'open')
         if file == None: return
         data  = []
         with open(file, 'r') as f:
             data = json.load(f)
         prepare_data(data)
     
-    def select_file(self, fileType):
+    def select_file(self, fileType, message, action, forceFileType = None):
         print(fileType)
-        fileName, _ = QFileDialog.getOpenFileName(self, "Select data file", "", fileType, options=QFileDialog.Option(1))
-        print(fileName)
-        if fileName:
-            return fileName
+        if action == 'open':
+            fileName, _ = QFileDialog.getOpenFileName(self, message, "", fileType, options=QFileDialog.Option(1))
+            print(fileName)
+            if fileName:
+                return fileName
+        elif action == 'save':
+            fileName, _ = QFileDialog.getSaveFileName(None, message, "", fileType)
+            
+            if fileName:
+                if forceFileType != None and not fileName.endswith(forceFileType):
+                    fileName+=forceFileType
+                print(fileName)
+                return fileName            
+    
         
 if __name__ == "__main__":
     app = QApplication(sys.argv)

@@ -168,7 +168,7 @@ class create_map():
         textOffset = math.ceil(sectionHeight*barScale/5)
         
         #Create the legend image and the draw object
-        legendImage = PIL.Image.new("RGB", (self.image.size[0] + legendWidth+textOffset + self.settings['offset'], legendHeight), color=(0,0,0,0))
+        legendImage = PIL.Image.new("RGBA", (self.image.size[0] + legendWidth+textOffset + self.settings['offset'], legendHeight), color=(0,0,0,0))
         draw = PIL.ImageDraw.Draw(legendImage)
         
         
@@ -195,7 +195,7 @@ class create_map():
             
             #Draw the bar and the text next to it
             xStart = 0 if self.settings['horizontal_alignment'] == 'left' else self.image.size[0] + self.settings['offset']
-            draw.rectangle([(xStart, yBottom), (sectionWidth+xStart, yTop)], fill=(255,0,0, 0))
+            draw.rectangle([(xStart, yBottom), (sectionWidth+xStart, yTop)], fill=(255,0,0, 255))
             draw.text((sectionWidth+textOffset+xStart, yBottom), value_text, fill="white", font=font)
 
             if self.settings['horizontal_alignment'] == 'left':
