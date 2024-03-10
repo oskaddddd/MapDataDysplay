@@ -3,12 +3,12 @@
     "mode": 1,
     "create_legend": true,
     "vertical_position": 0.04,
-    "horizontal_alignment": "right",
+    "horizontal_alignment": "left",
     "offset": 20,
-    "scale": 0.5,
-    "sections": 7,
+    "scale": 1.0,
+    "sections": 15,
     "text_scale": 0.9,
-    "round_to": 2,
+    "round_to": 0,
     "bar_scale": 0.7,
     "bar_width": 2.5,
     "units": "m/s",
@@ -16,17 +16,58 @@
     "SectionMap": false,
     "interpolation": "delauny",
     "manual_max_min": false,
-    "max": 100,
-    "min": 0,
+    "max": 90,
+    "min": 20,
     "MonocolorId": [
         255,
         0,
         0
     ],
-    "gradient":
-    [
-        [0, 2, [255, 0, 0]], 
-        [0.5, 1,[0, 255, 0]], 
-        [1, 2, [0, 0, 255]]
+    "gradient": [
+        {
+            "position": 0,
+            "weight": 2,
+            "color": [
+                255,
+                0,
+                0
+            ]
+        },
+        {
+            "position": 0.33,
+            "weight": 2,
+            "color": [
+                255,
+                255,
+                0
+            ]
+        },
+        {
+            "position": 0.5,
+            "weight": 2,
+            "color": [
+                0,
+                255,
+                0
+            ]
+        },
+        {
+            "position": 0.66,
+            "weight": 2,
+            "color": [
+                0,
+                255,
+                255
+            ]
+        },
+        {
+            "position": 1,
+            "weight": 2,
+            "color": [
+                0,
+                0,
+                255
+            ]
+        }
     ]
 }

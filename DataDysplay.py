@@ -7,6 +7,7 @@ import Interpolation
 import ReadSettings
 import QuadTree
 import math
+from Gradient import gradient
 
 
 
@@ -102,7 +103,12 @@ class create_map():
         self.maxMin = None
         output = None
         
+        self.pointValues = self.points[:, 2]
         
+        if not self.settings["manual_max_min"]:
+            self.maxMin = (math.floor(min(self.pointValues)), math.ceil(max(self.pointValues)))
+        else:
+            self.maxMin = (self.settings["min"], self.settings["max"])
         
         #Gpu computation
         if self.settings["computation"].lower() == 'opencl':
@@ -116,13 +122,13 @@ class create_map():
                 #Do the interpolation
                 creator = Interpolation.interpolate_delauny_gpu(False)
                 creator.createPixelBuffer(self.image.size, Image=self.image)
-                self.maxMin = (creator.createTriangles(points=self.points, Mode=mode, showTriangles=False)[1:])
+                creator.createTriangles(points=self.points, maxMin=self.maxMin ,Mode=mode, showTriangles=False)
                 output = creator.compute()  
                 
         #Delauny interpolation on the cpu 
         else:
             
-            creator = Interpolation.interpolate_delauny_cpu(self.points, self.image, mode, None, self.settings['MonocolorId'], True)
+            creator = Interpolation.interpolate_delauny_cpu(self.points, self.image, self.maxMin, clip = True)
             #creator.visualizeTriangles()
             o = creator.Interpolate()
             output = o[0]
@@ -162,7 +168,7 @@ class create_map():
         
         
         #Find the width of the legend based on the longest text
-        legendWidth = math.ceil(font.getsize(longestText)[0]+sectionWidth)
+        legendWidth = math.ceil(font.getlength(longestText)+sectionWidth)
         
         #Calculate the offset of the text from the height of the bars
         textOffset = math.ceil(sectionHeight*barScale/5)
@@ -171,14 +177,19 @@ class create_map():
         legendImage = PIL.Image.new("RGBA", (self.image.size[0] + legendWidth+textOffset + self.settings['offset'], legendHeight), color=(0,0,0,0))
         draw = PIL.ImageDraw.Draw(legendImage)
         
+        #load the gradient
+        grad = gradient(self.maxMin, self.settings['gradient'])
         
+        sectionValue = (self.maxMin[1] - self.maxMin[0])/(numSections-1)
         
         # Draw sections with values and units
         for i in range(numSections):
-            value = self.maxMin[1]
+            value = self.maxMin[0]+i*sectionValue
             
             #Get the text for this section
             value_text = f'{f"%0.{roundTo}f"%value} {self.settings["units"]}'
+            
+            color = (*grad.GetColorAtPoint(value), 255)
             
             #Calculate the boundries of the bar
             yTop = 0
@@ -195,7 +206,7 @@ class create_map():
             
             #Draw the bar and the text next to it
             xStart = 0 if self.settings['horizontal_alignment'] == 'left' else self.image.size[0] + self.settings['offset']
-            draw.rectangle([(xStart, yBottom), (sectionWidth+xStart, yTop)], fill=(255,0,0, 255))
+            draw.rectangle([(xStart, yBottom), (sectionWidth+xStart, yTop)], fill=color)
             draw.text((sectionWidth+textOffset+xStart, yBottom), value_text, fill="white", font=font)
 
             if self.settings['horizontal_alignment'] == 'left':
@@ -210,9 +221,10 @@ if __name__ == "__main__":
     magic = create_map()
     #magic.DecodeData()
     magic.ReadData()
+    
     t = time.time()
-    image = PIL.Image.fromarray(magic.Interpolate())
+    image = magic.Interpolate()
     print('speed:', time.time()-t)
     
-    PIL.Image.fromarray(image).show()
+    image.show()
 

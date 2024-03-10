@@ -5,6 +5,9 @@ import math
 import os
 import PIL.Image
 
+from Gradient import gradient
+import ReadSettings
+
 os.environ['PYOPENCL_NO_CACHE'] = '1'
 
 
@@ -14,6 +17,7 @@ class interpolate_delauny_gpu():
         self.ctx = cl.create_some_context(interactive=interactive)
         self.queue = cl.CommandQueue(self.ctx)
         self.mf = cl.mem_flags
+        
     def createPixelBuffer(self, resolution = None, Points = None, Image =None) -> list: #width, height
         Dots = []
         if resolution != None and Points == None:
@@ -39,7 +43,7 @@ class interpolate_delauny_gpu():
         self.image = Image
         return Dots
     
-    def createTriangles(self, points, Mode = 0 ,showTriangles = False):
+    def createTriangles(self, points, maxMin,Mode = 0 ,showTriangles = False):
         '''Modes:\n
         0 - Black and White (white - high, black - low)\n
         1 - RGB (Red - high, Green - mid, Blue - low)\n
@@ -49,8 +53,8 @@ class interpolate_delauny_gpu():
         p = points[:, 2]
         points = points[:, :2]
         
-        m = math.ceil(max(p))
-        l = math.floor(min(p))
+        m = maxMin[0]
+        l = maxMin[1]
 
         tri = Delaunay(points)
         
@@ -72,7 +76,7 @@ class interpolate_delauny_gpu():
         self.data = np.array([self.image.size[0], self.image.size[1], 3, int(self.triangles.size/9),m, l, Mode])
         self.sizeBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = self.data.nbytes)
         cl.enqueue_copy(self.queue, self.sizeBuffer, self.data)
-        return (output, m, l)
+        return output
     
     def compute(self):
         programSource = ''
@@ -89,7 +93,7 @@ class interpolate_delauny_gpu():
 
 class interpolate_delauny_cpu():
 
-    def __init__(self, points:np.ndarray, mask:PIL.Image.Image, colorMode = 1, MinMax = None, monocolorValues = None, clip = True):
+    def __init__(self, points:np.ndarray, mask:PIL.Image.Image, maxMin:tuple, colorMode = 1, monocolorValues = None, clip = True):
         #Seperate the values of the points from said points
         self.pointValues = points[:, 2]
         self.points = points[:, :2]
@@ -97,12 +101,8 @@ class interpolate_delauny_cpu():
         self.colorMode = colorMode
         
         #Determine the maximum and minimum value of the points
-        if MinMax == None:
-            self.minVal = math.floor(min(self.pointValues))
-            self.maxVal = math.ceil(max(self.pointValues))
-        else:
-            self.minVal = MinMax[0]
-            self.maxVal = MinMax[1]
+        self.minVal = maxMin[0]
+        self.maxVal = maxMin[1]
             
 
         #Determines what shade of color will a value be
@@ -165,6 +165,8 @@ class interpolate_delauny_cpu():
 
         #Create the outputs for the output image
         imageOutput = np.zeros(shape=(self.resolution[1], self.resolution[0], 4), dtype = np.uint8)
+        
+        grad = gradient((self.minVal, self.maxVal), ReadSettings.Settings()["gradient"])
 
         def middle(a, b, c):
                 if b>=a and b<=c:
@@ -198,30 +200,7 @@ class interpolate_delauny_cpu():
                     val = (triangle[2][2]*a+triangle[1][2]*b+triangle[0][2]*c)/(a+b+c)
 
                     #Colors
-                    if self.colorMode == 0:
-                        val = (val-self.minVal)/self.valueImpact
-                        imageOutput[y][x] = np.array([val if self.monocolorValues[0] == 0 else self.monocolorValues[0], val if self.monocolorValues[1] == 0 else self.monocolorValues[1], val if self.monocolorValues[2] == 0 else self.monocolorValues[2], 255])
-                    elif self.colorMode == 1:
-                        val-=self.minVal
-                        out = np.array((0, 0, 0, 255))
-                        self.pointValues = (self.maxVal-self.minVal)*0.25
-
-                        if (val >= self.pointValues*2.7):
-                            out[1] = round((((self.pointValues*4)-val)/(self.pointValues*1.3))*255)
-                            out[0] = 255
-                        
-                        elif (val >= self.pointValues*2 and val < self.pointValues*2.7):
-                            out[0] = round(((val-self.pointValues*2)/(self.pointValues*0.7))*255)
-                            out[1] = 255
-                        
-                        elif(val >= self.pointValues*1.3 and val < self.pointValues*2):
-                            out[2] = round(((2*self.pointValues-val)/(self.pointValues*0.7))*255)
-                            out[1] = 255
-                        
-                        if (val < self.pointValues*1.3):
-                            out[1] = round((val/(self.pointValues*1.3))*255)
-                            out[2] = 255
-                        imageOutput[y][x] = out
+                    imageOutput[y][x] = [*grad.GetColorAtPoint(val), 255]
 
 
 
