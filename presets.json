@@ -1,0 +1,68 @@
+{"rgb": [
+    {
+        "position": 0,
+        "weight": 2,
+        "color": [
+            255,
+            0,
+            0
+        ]
+    },
+    {
+        "position": 0.33,
+        "weight": 2,
+        "color": [
+            255,
+            255,
+            0
+        ]
+    },
+    {
+        "position": 0.5,
+        "weight": 2,
+        "color": [
+            0,
+            255,
+            0
+        ]
+    },
+    {
+        "position": 0.66,
+        "weight": 2,
+        "color": [
+            0,
+            255,
+            255
+        ]
+    },
+    {
+        "position": 1,
+        "weight": 2,
+        "color": [
+            0,
+            0,
+            255
+        ]
+    }
+],
+"mono":[
+        {
+            "position": 0,
+            "weight": 2,
+            "color": [
+                255,
+                0,
+                0
+            ]
+        },
+        {
+            "position": 1,
+            "weight": 2,
+            "color": [
+                255,
+                255,
+                0
+            ]
+        }
+    ]
+}

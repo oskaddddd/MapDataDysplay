@@ -11,7 +11,7 @@ monitor = get_monitors()[0]
 monitor = (monitor.width, monitor.height)
 
 print(monitor)
-imageName = ReadSettings.Settings(True)["ImageName"]
+imageName = ReadSettings.Settings(True)["image_name"]
 
 
 defImage = PIL.Image.open(imageName).convert('RGBA')
