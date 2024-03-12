@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>820</width>
+    <width>797</width>
     <height>546</height>
    </rect>
   </property>
@@ -28,7 +28,7 @@
         <string>Setup</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_7">
-        <item row="0" column="0">
+        <item row="0" column="1">
          <widget class="QTabWidget" name="tabWidget_2">
           <property name="tabPosition">
            <enum>QTabWidget::North</enum>
@@ -55,6 +55,73 @@
            <attribute name="title">
             <string>Make mask</string>
            </attribute>
+           <layout class="QGridLayout" name="gridLayout_8">
+            <item row="2" column="2">
+             <widget class="QSpinBox" name="mask_calibrate_input">
+              <property name="minimum">
+               <number>-100</number>
+              </property>
+              <property name="maximum">
+               <number>100</number>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="2">
+             <widget class="QPushButton" name="save_mask_image">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Save mask</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="0">
+             <widget class="QLabel" name="label_16">
+              <property name="text">
+               <string>Adjust the slider untill the map is colored white.</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0" colspan="3">
+             <widget class="QGraphicsView" name="mask_viewer"/>
+            </item>
+            <item row="6" column="1">
+             <widget class="QPushButton" name="select_map_image_button">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Select map image</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0" colspan="2">
+             <widget class="QSlider" name="mask_calibrate_slider">
+              <property name="minimum">
+               <number>-100</number>
+              </property>
+              <property name="maximum">
+               <number>100</number>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="tickPosition">
+               <enum>QSlider::TicksBothSides</enum>
+              </property>
+              <property name="tickInterval">
+               <number>100</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </widget>
           <widget class="QWidget" name="tab_5">
            <attribute name="title">
@@ -552,11 +619,23 @@
         </item>
         <item row="0" column="0" rowspan="4">
          <widget class="QGraphicsView" name="map_viewer">
+          <property name="horizontalScrollBarPolicy">
+           <enum>Qt::ScrollBarAsNeeded</enum>
+          </property>
+          <property name="sizeAdjustPolicy">
+           <enum>QAbstractScrollArea::AdjustToContents</enum>
+          </property>
+          <property name="transformationAnchor">
+           <enum>QGraphicsView::AnchorUnderMouse</enum>
+          </property>
           <property name="resizeAnchor">
            <enum>QGraphicsView::AnchorUnderMouse</enum>
           </property>
           <property name="viewportUpdateMode">
            <enum>QGraphicsView::FullViewportUpdate</enum>
+          </property>
+          <property name="rubberBandSelectionMode">
+           <enum>Qt::ContainsItemBoundingRect</enum>
           </property>
          </widget>
         </item>
@@ -611,8 +690,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>820</width>
-     <height>21</height>
+     <width>797</width>
+     <height>22</height>
     </rect>
    </property>
   </widget>
@@ -649,8 +728,8 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>86</x>
-     <y>241</y>
+     <x>98</x>
+     <y>274</y>
     </hint>
     <hint type="destinationlabel">
      <x>192</x>
@@ -665,12 +744,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>690</x>
-     <y>246</y>
+     <x>664</x>
+     <y>225</y>
     </hint>
     <hint type="destinationlabel">
-     <x>753</x>
-     <y>244</y>
+     <x>719</x>
+     <y>230</y>
     </hint>
    </hints>
   </connection>
@@ -681,12 +760,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>762</x>
-     <y>249</y>
+     <x>719</x>
+     <y>230</y>
     </hint>
     <hint type="destinationlabel">
-     <x>693</x>
-     <y>245</y>
+     <x>664</x>
+     <y>225</y>
     </hint>
    </hints>
   </connection>
@@ -697,12 +776,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>696</x>
-     <y>276</y>
+     <x>664</x>
+     <y>259</y>
     </hint>
     <hint type="destinationlabel">
-     <x>762</x>
-     <y>282</y>
+     <x>719</x>
+     <y>264</y>
     </hint>
    </hints>
   </connection>
@@ -713,12 +792,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>761</x>
-     <y>276</y>
+     <x>719</x>
+     <y>264</y>
     </hint>
     <hint type="destinationlabel">
-     <x>707</x>
-     <y>281</y>
+     <x>664</x>
+     <y>259</y>
     </hint>
    </hints>
   </connection>
@@ -729,12 +808,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>708</x>
-     <y>313</y>
+     <x>664</x>
+     <y>293</y>
     </hint>
     <hint type="destinationlabel">
-     <x>749</x>
-     <y>316</y>
+     <x>719</x>
+     <y>298</y>
     </hint>
    </hints>
   </connection>
@@ -745,12 +824,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>757</x>
-     <y>306</y>
+     <x>719</x>
+     <y>298</y>
     </hint>
     <hint type="destinationlabel">
-     <x>701</x>
-     <y>312</y>
+     <x>664</x>
+     <y>293</y>
     </hint>
    </hints>
   </connection>
@@ -761,12 +840,44 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>483</x>
-     <y>155</y>
+     <x>478</x>
+     <y>142</y>
     </hint>
     <hint type="destinationlabel">
      <x>567</x>
      <y>192</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>mask_calibrate_slider</sender>
+   <signal>sliderMoved(int)</signal>
+   <receiver>mask_calibrate_input</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>616</x>
+     <y>414</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>715</x>
+     <y>423</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>mask_calibrate_input</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>mask_calibrate_slider</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>711</x>
+     <y>418</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>640</x>
+     <y>419</y>
     </hint>
    </hints>
   </connection>
