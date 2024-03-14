@@ -25,9 +25,14 @@ class Ui(QMainWindow):
         
         self.mask_setup_scene = QGraphicsScene()
         self.mask_setup_viewer.setScene(self.mask_setup_scene)
-        self.mask_image = None
-        self.mask_array_unchenged = None
-        self.mask_image_array = None
+        self.mask_setup_image = None
+        self.mask_setup_array_unchenged = None
+        self.mask_setup_array = None
+        self.mask_image = PIL.Image.open("mask.png")
+        
+        self.calibrate_scene = QGraphicsScene()
+        self.load_image(self.mask_image, self.calibrate_scene)
+        self.calibrate_viewer.setScene(self.calibrate_scene)
         
         self.dot_pos = None
         
@@ -115,12 +120,16 @@ class Ui(QMainWindow):
         #Load mask image button
         self.select_map_image_button.clicked.connect(self.load_mask_setup_image)
         #Save mask
-        self.save_mask_image_button.clicked.connect(lambda: self.save_image(self.mask_image, "/home/oskaras/Documents/Programing/Visualizing-Geographical-Data/mask.png"))
+        self.save_mask_image_button.clicked.connect(self.save_mask)
         #Update mask
         self.mask_threashold_slider.valueChanged.connect(lambda data: self.update_mask(data*7.65))
         
+        #CALIBRATION
+        self.calibrate_point_button.clicked.connect(self.point_button)
         
-        
+        self.calibrate_gps1_input.valueChanged.connect(lambda value: self.update_calibration_settings('gps', 0, value))
+        self.calibrate_gps2_input.valueChanged.connect(lambda value: self.update_calibration_settings('gps', 1, value))
+     
         #Load data button
         self.load_data_button.clicked.connect(self.prepare_data)
         #Create Button
@@ -133,13 +142,14 @@ class Ui(QMainWindow):
         self.error_message_timer.timeout.connect(lambda: self.error_message.setText(''))
         
     
-    #    self.view.mousePressEvent = self.mousePressEvent
-#
-    #def mousePressEvent(self, event):
-    #    if event.buttons() == Qt.LeftButton:
-    #        pos = self.view.mapToScene(event.pos())
-    #        self.draw_selection_dot(pos)
-#
+        #self.calibrate_viewer.clicked.connect(self.mousePressEvent)
+
+    def mousePressEvent(self, event):
+        if event.buttons() == Qt.LeftButton:
+            pos = self.calibrate_viewer.mapToScene(event.pos())
+            print(f"presed {pos}")
+            #self.draw_selection_dot(pos)
+
     #def draw_selection_dot(self, pos):
     #    if self.dot_pos:
     #        self.scene.removeItem(self.dot_pos)
@@ -149,14 +159,30 @@ class Ui(QMainWindow):
     #    dot_size = 5
     #    dot = self.scene.addEllipse(pos.x() - dot_size / 2, pos.y() - dot_size / 2, dot_size, dot_size, pen, brush)
     #    self.dot_pos = dot
+    #CALIBRATION
+    def point_button(self):
+        self.calibrate_point_index = 0 if self.calibrate_point_button.isChecked() == False else 1
+        self.calibrate_point_button.setText(f'Point {self.calibrate_point_index+1}')
         
-
+        self.calibrate_gps1_input.setValue(settings['calibrate'][self.calibrate_point_index]["gps"][0])
+        self.calibrate_gps2_input.setValue(settings['calibrate'][self.calibrate_point_index]["gps"][1])
+        
+        print(self.calibrate_point_index, self.calibrate_point_button.isChecked())
+    
+    def update_calibration_settings(self, setting, coordinate_index, value):
+        settings['calibrate'][self.calibrate_point_index][setting][coordinate_index] = value
+        print(value)
     #MASK CREATION
+    def save_mask(self):
+        self.mask_image = self.mask_setup_image
+        self.load_image(self.mask_image, self.calibrate_scene)
+        self.save_image(self.mask_setup_image, "mask.png")
+        
     def update_mask(self, threashold):
         inverse = True
         
         #Check if any mask image is loaded
-        if type(self.mask_image_array) != np.ndarray:
+        if type(self.mask_setup_array) != np.ndarray:
             return
         
         #Checks if the threashold is invered   
@@ -169,28 +195,28 @@ class Ui(QMainWindow):
         #Calculate the mask according to the threashold
         mask = None
         if inverse:
-            mask = np.sum(self.mask_array_unchenged, axis=2) < threashold
+            mask = np.sum(self.mask_setup_array_unchenged, axis=2) < threashold
         else:
-            mask = np.sum(self.mask_array_unchenged, axis=2) > threashold
+            mask = np.sum(self.mask_setup_array_unchenged, axis=2) > threashold
         
         #Update the mask image according to the newly created mask     
-        self.mask_image_array[:, :, :] = 255
-        self.mask_image_array[mask, 3] = 0
+        self.mask_setup_array[:, :, :] = 255
+        self.mask_setup_array[mask, 3] = 0
         print(threashold, inverse)
-        self.mask_image = PIL.Image.fromarray(self.mask_image_array)
+        self.mask_setup_image = PIL.Image.fromarray(self.mask_setup_array)
         
         #Dysplay the image on screen
-        self.load_image(self.mask_image, self.mask_setup_scene)
+        self.load_image(self.mask_setup_image, self.mask_setup_scene)
                 
     
     def load_mask_setup_image(self):
         #Load the mask image to screen
         path = self.select_file("Images (*.png)", "Select map image", 'open')
         if path != None:
-            self.mask_image = PIL.Image.open(path)
-            self.mask_array_unchenged = np.array(self.mask_image)
-            self.mask_image_array = self.mask_array_unchenged.copy()
-            self.load_image(self.mask_image, self.mask_setup_scene)
+            self.mask_setup_image = PIL.Image.open(path)
+            self.mask_setup_array_unchenged = np.array(self.mask_setup_image)
+            self.mask_setup_array = self.mask_setup_array_unchenged.copy()
+            self.load_image(self.mask_setup_image, self.mask_setup_scene)
             
     #SETTINGS PAGE    
     def change_setting(self, data, setting):

@@ -33,19 +33,19 @@ if grid:
         for yi in range(y2):
             c1 = random.randrange(95, 105)/100*(xi/k1+min(cx))
             c2 = random.randrange(95, 105)/100*(yi/k1+min(cy))
-            arr.append({"GPS": [str(c1), str(c2)], "Value": int((noise([c1*val, c2*val])))})
+            arr.append({"gps": [1, c2], "value": int((noise([c1*val, c2*val])))})
             #print([mx+kkx*xi, my+kky*yi])
 else:
     ran = [13, 60]
     cy = [int(cy[0]*10**10), int(cy[1]*10**10)]
     cx = [int(cx[0]*10**10), int(cx[1]*10**10)]
-    noise = PerlinNoise(octaves=7, seed=random.randrange(100, 100000))
+    noise = PerlinNoise(octaves=5, seed=random.randrange(100, 100000))
     x = 1
     for _ in range(n):
         
         #print(_)
         dat = [random.randrange(cx[0], cx[1])/10**10, random.randrange(cy[0], cy[1])/10**10]
-        arr.append({"GPS": [str(dat[0]), str(dat[1])], "Value": int((noise([dat[0]*x, dat[1]*x])+1)*50)})
+        arr.append({"gps": [dat[0], dat[1]], "value": int((noise([dat[0]*x, dat[1]*x])+1)*50)})
 
 with open('data.json', 'w') as f:
     json.dump(arr, f, indent=2)

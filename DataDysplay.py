@@ -17,22 +17,21 @@ def prepare_data(data = None):
     
     #Get calibration data
     try:
-        with open('CoordinateCalibration.json',) as f:
-            cali = json.load(f)
-            if cali == [[[0, 0], 0], [[0, 0], 0]]:
-                exit()
-    except:
-        print('Please set 2 calibration coordinates in Calibration.py')
+        cali = ReadSettings.Settings()['calibrate']
+        if cali == [[[0, 0], 0], [[0, 0], 0]]:
+            exit()
+    except Exception as e:
+        print('Please set 2 calibration coordinates in Calibration.py\n', e)
         exit()
         
     #Calculate the decoding values
-    cali[0]['GPS'].reverse()
-    cali[1]['GPS'].reverse()
-    k = [(cali[0]['Pixel'][0]-cali[1]['Pixel'][0])/(float(cali[0]['GPS'][0])-float(cali[1]['GPS'][0])),
-        (cali[0]['Pixel'][1]-cali[1]['Pixel'][1])/(float(cali[0]['GPS'][1])-float(cali[1]['GPS'][1]))]
+    cali[0]['gps'].reverse()
+    cali[1]['gps'].reverse()
+    k = [(cali[0]['pixel'][0]-cali[1]['pixel'][0])/(cali[0]['gps'][0]-cali[1]['gps'][0]),
+        (cali[0]['pixel'][1]-cali[1]['pixel'][1])/(cali[0]['gps'][1]-cali[1]['gps'][1])]
     
-    b = [cali[0]['Pixel'][0]-(k[0]*float(cali[0]['GPS'][0])),
-        cali[0]['Pixel'][1]-(k[1]*float(cali[0]['GPS'][1]))]
+    b = [cali[0]['pixel'][0]-(k[0]*cali[0]['gps'][0]),
+        cali[0]['pixel'][1]-(k[1]*cali[0]['gps'][1])]
     #print(data)
     if data == None:
         #Read the data.json
@@ -46,8 +45,8 @@ def prepare_data(data = None):
     
     #Decode the data from data.json and add it to the points array
     for i, point in enumerate(data):
-        n = [round(float(point["GPS"][1])*k[0]+b[0]), round(float(point["GPS"][0])*k[1]+b[1])]
-        points[i] = np.array([n[0], n[1], point["Value"]])
+        n = [round(point["gps"][1]*k[0]+b[0]), round(point["gps"][0]*k[1]+b[1])]
+        points[i] = np.array([n[0], n[1], point["value"]])
     
     #Write the points to a json file
     with open('points.json', 'w')as f:

@@ -15,7 +15,7 @@
     "computation": "cpu",
     "SectionMap": false,
     "interpolation": "delauny",
-    "manual_max_min": true,
+    "manual_max_min": false,
     "max": 90,
     "min": 20,
     "MonocolorId": [
@@ -67,6 +67,28 @@
                 0,
                 0,
                 255
+            ]
+        }
+    ],
+    "calibrate": [
+        {
+            "gps": [
+                54.57310287279165,
+                25.746898358469377
+            ],
+            "pixel": [
+                1038,
+                701
+            ]
+        },
+        {
+            "gps": [
+                56.32143275441217,
+                23.0761540859354
+            ],
+            "pixel": [
+                461,
+                48
             ]
         }
     ]

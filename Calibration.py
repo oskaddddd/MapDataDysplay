@@ -136,7 +136,7 @@ def move(dir):
         t = dir
         if t[1] < image.size[1] and t[0] < image.size[0]:
             Im['relief'] = RAISED
-            if (defImageArr[t[1]][t[0] ] == np.array([0, 0, 0, 255])).all():
+            if (defImageArr[t[1]][t[0] ] == np.array([255, 255, 255, 255])).all():
                 selected = t
                 imageArr = np.array(image)
 
