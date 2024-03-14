@@ -57,7 +57,7 @@
            </attribute>
            <layout class="QGridLayout" name="gridLayout_8">
             <item row="2" column="2">
-             <widget class="QSpinBox" name="mask_calibrate_input">
+             <widget class="QSpinBox" name="mask_threashold_input">
               <property name="minimum">
                <number>-100</number>
               </property>
@@ -67,7 +67,7 @@
              </widget>
             </item>
             <item row="6" column="2">
-             <widget class="QPushButton" name="save_mask_image">
+             <widget class="QPushButton" name="save_mask_image_button">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -87,7 +87,11 @@
              </widget>
             </item>
             <item row="0" column="0" colspan="3">
-             <widget class="QGraphicsView" name="mask_viewer"/>
+             <widget class="QGraphicsView" name="mask_setup_viewer">
+              <property name="sizeAdjustPolicy">
+               <enum>QAbstractScrollArea::AdjustToContents</enum>
+              </property>
+             </widget>
             </item>
             <item row="6" column="1">
              <widget class="QPushButton" name="select_map_image_button">
@@ -103,7 +107,7 @@
              </widget>
             </item>
             <item row="2" column="0" colspan="2">
-             <widget class="QSlider" name="mask_calibrate_slider">
+             <widget class="QSlider" name="mask_threashold_slider">
               <property name="minimum">
                <number>-100</number>
               </property>
@@ -691,7 +695,7 @@
      <x>0</x>
      <y>0</y>
      <width>797</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>
@@ -850,9 +854,9 @@
    </hints>
   </connection>
   <connection>
-   <sender>mask_calibrate_slider</sender>
+   <sender>mask_threashold_slider</sender>
    <signal>sliderMoved(int)</signal>
-   <receiver>mask_calibrate_input</receiver>
+   <receiver>mask_threashold_input</receiver>
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -866,9 +870,9 @@
    </hints>
   </connection>
   <connection>
-   <sender>mask_calibrate_input</sender>
+   <sender>mask_threashold_input</sender>
    <signal>valueChanged(int)</signal>
-   <receiver>mask_calibrate_slider</receiver>
+   <receiver>mask_threashold_slider</receiver>
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">

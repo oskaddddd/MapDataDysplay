@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import *
 from PyQt6 import uic
-from PyQt6.QtCore import QTimer
-from PyQt6.QtGui import QPixmap, QImage
+from PyQt6.QtCore import QTimer, QPointF, Qt
+from PyQt6.QtGui import QPixmap, QImage, QPainter, QPen, QColor
 
 import sys
 import qdarktheme
@@ -21,6 +21,17 @@ class Ui(QMainWindow):
         self.map_scene = QGraphicsScene()
         self.map_viewer.setScene(self.map_scene)
         self.output = None
+        
+        
+        self.mask_setup_scene = QGraphicsScene()
+        self.mask_setup_viewer.setScene(self.mask_setup_scene)
+        self.mask_image = None
+        self.mask_array_unchenged = None
+        self.mask_image_array = None
+        
+        self.dot_pos = None
+        
+        
         
     
 
@@ -100,60 +111,111 @@ class Ui(QMainWindow):
         self.round_to_input.valueChanged.connect(lambda data: self.change_setting(data, 'round_to'))
 
         
+        #SETUP
+        #Load mask image button
+        self.select_map_image_button.clicked.connect(self.load_mask_setup_image)
+        #Save mask
+        self.save_mask_image_button.clicked.connect(lambda: self.save_image(self.mask_image, "/home/oskaras/Documents/Programing/Visualizing-Geographical-Data/mask.png"))
+        #Update mask
+        self.mask_threashold_slider.valueChanged.connect(lambda data: self.update_mask(data*7.65))
+        
+        
+        
         #Load data button
         self.load_data_button.clicked.connect(self.prepare_data)
         #Create Button
         self.create_button.clicked.connect(self.create_image)
         #Save image
-        self.save_image_button.clicked.connect(self.save_image)
+        self.save_image_button.clicked.connect(lambda: self.save_image(self.output))
         self.show()
         
         self.error_message_timer = QTimer()
         self.error_message_timer.timeout.connect(lambda: self.error_message.setText(''))
         
     
+    #    self.view.mousePressEvent = self.mousePressEvent
+#
+    #def mousePressEvent(self, event):
+    #    if event.buttons() == Qt.LeftButton:
+    #        pos = self.view.mapToScene(event.pos())
+    #        self.draw_selection_dot(pos)
+#
+    #def draw_selection_dot(self, pos):
+    #    if self.dot_pos:
+    #        self.scene.removeItem(self.dot_pos)
+#
+    #    pen = QPen(Qt.red)
+    #    brush = QColor(Qt.red)
+    #    dot_size = 5
+    #    dot = self.scene.addEllipse(pos.x() - dot_size / 2, pos.y() - dot_size / 2, dot_size, dot_size, pen, brush)
+    #    self.dot_pos = dot
+        
 
-    def save_image(self):
-        if self.output == None:
-            self.error_message.setText('Please create the image before saving it')
-            self.error_message_timer.start(3000)
+    #MASK CREATION
+    def update_mask(self, threashold):
+        inverse = True
+        
+        #Check if any mask image is loaded
+        if type(self.mask_image_array) != np.ndarray:
             return
-        file = self.select_file("Images (*.png)", "Save image", 'save', '.png')
-        self.output.save(file)
         
-
+        #Checks if the threashold is invered   
+        if threashold < 0:
+            inverse = False
         
+        #Reset threashold
+        threashold = abs(threashold)
+        
+        #Calculate the mask according to the threashold
+        mask = None
+        if inverse:
+            mask = np.sum(self.mask_array_unchenged, axis=2) < threashold
+        else:
+            mask = np.sum(self.mask_array_unchenged, axis=2) > threashold
+        
+        #Update the mask image according to the newly created mask     
+        self.mask_image_array[:, :, :] = 255
+        self.mask_image_array[mask, 3] = 0
+        print(threashold, inverse)
+        self.mask_image = PIL.Image.fromarray(self.mask_image_array)
+        
+        #Dysplay the image on screen
+        self.load_image(self.mask_image, self.mask_setup_scene)
+                
     
-    
+    def load_mask_setup_image(self):
+        #Load the mask image to screen
+        path = self.select_file("Images (*.png)", "Select map image", 'open')
+        if path != None:
+            self.mask_image = PIL.Image.open(path)
+            self.mask_array_unchenged = np.array(self.mask_image)
+            self.mask_image_array = self.mask_array_unchenged.copy()
+            self.load_image(self.mask_image, self.mask_setup_scene)
+            
+    #SETTINGS PAGE    
     def change_setting(self, data, setting):
         print(data)
         settings[setting] = data
         
+        
+    #MAIN IMAGE CREATION SCREEN       
     def create_image(self):
 
         t = time.time()
+        #Load the data
         mapObj = create_map()
         e = mapObj.ReadData()
         if e != None:
             self.error_message.setText(e)
             return
+        
+        #Create the map image
         self.output = mapObj.Interpolate()
         print('speed:', time.time()-t)
         
-        
-        qImage = QImage(self.output.tobytes(), self.output.size[0], self.output.size[1],QImage.Format.Format_RGBA8888)
-        print(1)
+        self.load_image(self.output, self.map_scene)
 
-        pixmap = QPixmap.fromImage(qImage)
-        print(3)
-        self.map_scene.clear()
-        self.map_scene.addPixmap(pixmap)
-        #self.map_viewer.shear()
-        print(2)
         
-        #self.map_viewer(QGraphicsView())
-        #output.show()
-    
     def prepare_data(self):
         file = self.select_file("All (*);;Json files (*.json)", "Select data file", 'open')
         if file == None: return
@@ -161,9 +223,20 @@ class Ui(QMainWindow):
         with open(file, 'r') as f:
             data = json.load(f)
         prepare_data(data)
+        
+        
+    #UNIVERSAL FUNCTIONS
+    def load_image(self, image, scene):
+        qImage = QImage(image.tobytes(), image.size[0], image.size[1], QImage.Format.Format_RGBA8888)
+        pixmap = QPixmap.fromImage(qImage)
+        
+        scene.clear()
+        scene.addPixmap(pixmap)
+        
     
     def select_file(self, fileType, message, action, forceFileType = None):
         print(fileType)
+        
         if action == 'open':
             fileName, _ = QFileDialog.getOpenFileName(self, message, "", fileType, options=QFileDialog.Option(1))
             print(fileName)
@@ -176,7 +249,20 @@ class Ui(QMainWindow):
                 if forceFileType != None and not fileName.endswith(forceFileType):
                     fileName+=forceFileType
                 print(fileName)
-                return fileName            
+                return fileName    
+            
+              
+    def save_image(self, image, path = None):
+        if image == None:
+            self.error_message.setText('Please create the image before saving it')
+            self.error_message_timer.start(3000)
+            return
+        if path == None:
+            path = self.select_file("Images (*.png)", "Save image", 'save', '.png')
+            if path == None:
+                return
+        print(path)
+        image.save(path)      
     
         
 if __name__ == "__main__":
