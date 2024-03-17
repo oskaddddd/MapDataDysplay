@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import *
 from PyQt6 import uic
-from PyQt6.QtCore import QTimer, QPointF, Qt
-from PyQt6.QtGui import QPixmap, QImage, QPainter, QPen, QColor
+from PyQt6.QtCore import QTimer, pyqtSignal, Qt
+from PyQt6.QtGui import QPixmap, QImage, QColor, QBrush
 
 import sys
 import qdarktheme
@@ -14,12 +14,25 @@ import PIL.Image
 settings = Settings()
 
 class ClickableGraphicsView(QGraphicsView):
-    def __init__(self):
-        super().__init__()
+    clicked = pyqtSignal(tuple)
+    
+
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        print('HAHA')
 
 
     def mousePressEvent(self, event):
-        print("Mouse press event occurred on the red ellipse")
+        #print("Mouse press event occurred on the red ellipse")
+        item = self.itemAt(event.pos())
+        
+        # Check if the item is not None and is the image item
+        if isinstance(item, QGraphicsPixmapItem):
+            print("Clicked on the image")
+            self.clicked.emit((event.pos().x(), event.pos().y()))
+
+
                 
 
 class Ui(QMainWindow):
@@ -38,12 +51,16 @@ class Ui(QMainWindow):
         self.mask_setup_array_unchenged = None
         self.mask_setup_array = None
         self.mask_image = PIL.Image.open("mask.png")
+        self.selector_dot = None
         
+        print(self.calibrate_viewer)
+        #self.calibrate_viewer = ClickableGraphicsView()
         self.calibrate_scene = QGraphicsScene()
         self.load_image(self.mask_image, self.calibrate_scene)
         self.calibrate_viewer.setScene(self.calibrate_scene)
-        
+        print(self.calibrate_viewer)
         self.dot_pos = None
+        self.point_button()
         
         
         
@@ -138,7 +155,8 @@ class Ui(QMainWindow):
         
         self.calibrate_gps1_input.valueChanged.connect(lambda value: self.update_calibration_settings('gps', 0, value))
         self.calibrate_gps2_input.valueChanged.connect(lambda value: self.update_calibration_settings('gps', 1, value))
-     
+
+        self.calibrate_viewer.clicked.connect(lambda coordinates: self.image_click(coordinates))
         #Load data button
         self.load_data_button.clicked.connect(self.prepare_data)
         #Create Button
@@ -164,6 +182,28 @@ class Ui(QMainWindow):
     def update_calibration_settings(self, setting, coordinate_index, value):
         settings['calibrate'][self.calibrate_point_index][setting][coordinate_index] = value
         print(value)
+        
+    def image_click(self, coordinates):
+        print(coordinates)
+        #Convert click coordinates to scene coordinates
+        scene_pos = self.calibrate_viewer.mapToScene(coordinates[0], coordinates[1])
+        
+        #Get the item at the scene coordinates
+        item = self.calibrate_viewer.scene().itemAt(scene_pos, self.calibrate_viewer.transform())
+        if isinstance(item, QGraphicsPixmapItem):
+            #Convert scene coordinates to local coordinates of the image
+            image_pos = item.mapFromScene(scene_pos)
+            
+            x = image_pos.x()
+            y = image_pos.y()
+            #Print the local coordinates of the image
+            print("Clicked on the image at position:", x, y)
+            
+            color = QColor(Qt.GlobalColor.red)
+            dot_size = 4
+            if self.selector_dot:
+                self.calibrate_scene.removeItem(self.selector_dot)
+            self.selector_dot = self.calibrate_scene.addEllipse(x - dot_size / 2, y - dot_size / 2, dot_size, dot_size, brush=QBrush(color))
     #MASK CREATION
     def save_mask(self):
         self.mask_image = self.mask_setup_image
@@ -175,7 +215,7 @@ class Ui(QMainWindow):
         
         #Check if any mask image is loaded
         if type(self.mask_setup_array) != np.ndarray:
-            return
+            return 
         
         #Checks if the threashold is invered   
         if threashold < 0:
