@@ -13,6 +13,15 @@ import time
 import PIL.Image
 settings = Settings()
 
+class ClickableGraphicsView(QGraphicsView):
+    def __init__(self):
+        super().__init__()
+
+
+    def mousePressEvent(self, event):
+        print("Mouse press event occurred on the red ellipse")
+                
+
 class Ui(QMainWindow):
     def __init__(self):
         super(Ui, self).__init__()
@@ -141,24 +150,7 @@ class Ui(QMainWindow):
         self.error_message_timer = QTimer()
         self.error_message_timer.timeout.connect(lambda: self.error_message.setText(''))
         
-    
-        #self.calibrate_viewer.clicked.connect(self.mousePressEvent)
 
-    def mousePressEvent(self, event):
-        if event.buttons() == Qt.LeftButton:
-            pos = self.calibrate_viewer.mapToScene(event.pos())
-            print(f"presed {pos}")
-            #self.draw_selection_dot(pos)
-
-    #def draw_selection_dot(self, pos):
-    #    if self.dot_pos:
-    #        self.scene.removeItem(self.dot_pos)
-#
-    #    pen = QPen(Qt.red)
-    #    brush = QColor(Qt.red)
-    #    dot_size = 5
-    #    dot = self.scene.addEllipse(pos.x() - dot_size / 2, pos.y() - dot_size / 2, dot_size, dot_size, pen, brush)
-    #    self.dot_pos = dot
     #CALIBRATION
     def point_button(self):
         self.calibrate_point_index = 0 if self.calibrate_point_button.isChecked() == False else 1

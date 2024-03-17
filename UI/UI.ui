@@ -50,7 +50,7 @@
            <enum>QTabWidget::Rounded</enum>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <property name="documentMode">
            <bool>true</bool>
@@ -69,44 +69,7 @@
             <string>Make mask</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_8">
-            <item row="2" column="2">
-             <widget class="QSpinBox" name="mask_threashold_input">
-              <property name="minimum">
-               <number>-100</number>
-              </property>
-              <property name="maximum">
-               <number>100</number>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="2">
-             <widget class="QPushButton" name="save_mask_image_button">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Save mask</string>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="0">
-             <widget class="QLabel" name="label_16">
-              <property name="text">
-               <string>Adjust the slider untill the map is colored white.</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="0" colspan="3">
-             <widget class="QGraphicsView" name="mask_setup_viewer">
-              <property name="sizeAdjustPolicy">
-               <enum>QAbstractScrollArea::AdjustToContents</enum>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="1">
+            <item row="5" column="1">
              <widget class="QPushButton" name="select_map_image_button">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
@@ -119,7 +82,20 @@
               </property>
              </widget>
             </item>
-            <item row="2" column="0" colspan="2">
+            <item row="5" column="2">
+             <widget class="QPushButton" name="save_mask_image_button">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Save mask</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0" colspan="2">
              <widget class="QSlider" name="mask_threashold_slider">
               <property name="minimum">
                <number>-100</number>
@@ -137,6 +113,26 @@
                <number>100</number>
               </property>
              </widget>
+            </item>
+            <item row="5" column="0">
+             <widget class="QLabel" name="label_16">
+              <property name="text">
+               <string>Adjust the slider untill the map is colored white.</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="2">
+             <widget class="QSpinBox" name="mask_threashold_input">
+              <property name="minimum">
+               <number>-100</number>
+              </property>
+              <property name="maximum">
+               <number>100</number>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0" colspan="3">
+             <widget class="QWidget" name="widget" native="true"/>
             </item>
            </layout>
           </widget>
@@ -760,7 +756,7 @@
      <x>0</x>
      <y>0</y>
      <width>797</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>
