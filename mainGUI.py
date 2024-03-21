@@ -26,7 +26,7 @@ class ClickableGraphicsView(QGraphicsView):
     def mousePressEvent(self, event):
         #print("Mouse press event occurred on the red ellipse")
         item = self.itemAt(event.pos())
-        
+        print('click')
         # Check if the item is not None and is the image item
         if isinstance(item, QGraphicsPixmapItem):
             print("Clicked on the image")
@@ -51,16 +51,21 @@ class Ui(QMainWindow):
         self.mask_setup_array_unchenged = None
         self.mask_setup_array = None
         self.mask_image = PIL.Image.open("mask.png")
-        self.selector_dot = None
+        
         
         print(self.calibrate_viewer)
         #self.calibrate_viewer = ClickableGraphicsView()
         self.calibrate_scene = QGraphicsScene()
         self.load_image(self.mask_image, self.calibrate_scene)
         self.calibrate_viewer.setScene(self.calibrate_scene)
+        
         print(self.calibrate_viewer)
-        self.dot_pos = None
+        self.calibrate_selector_dot = None
+        self.calibrate_dot_coordinates = [settings['calibrate'][0]["pixel"], settings['calibrate'][1]["pixel"]]
+        self.calibrate_gps = [settings['calibrate'][0]["gps"], settings['calibrate'][1]["gps"]]
+        
         self.point_button()
+
         
         
         
@@ -153,10 +158,13 @@ class Ui(QMainWindow):
         #CALIBRATION
         self.calibrate_point_button.clicked.connect(self.point_button)
         
-        self.calibrate_gps1_input.valueChanged.connect(lambda value: self.update_calibration_settings('gps', 0, value))
-        self.calibrate_gps2_input.valueChanged.connect(lambda value: self.update_calibration_settings('gps', 1, value))
+        self.calibrate_gps1_input.valueChanged.connect(lambda value: self.change_gps_value(value, 0))
+        self.calibrate_gps2_input.valueChanged.connect(lambda value: self.change_gps_value(value, 1))
 
         self.calibrate_viewer.clicked.connect(lambda coordinates: self.image_click(coordinates))
+        
+        self.calibrate_save_button
+        
         #Load data button
         self.load_data_button.clicked.connect(self.prepare_data)
         #Create Button
@@ -170,6 +178,18 @@ class Ui(QMainWindow):
         
 
     #CALIBRATION
+    def save_calibration(self):
+        settings['calibrate'][0]['gps'] = self.calibrate_gps[0]
+        settings['calibrate'][1]['gps'] = self.calibrate_gps[1]
+        settings['calibrate'][0]['pixel'] = self.calibrate_dot_coordinates[0]
+        settings['calibrate'][1]['pixel'] = self.calibrate_dot_coordinates[1]
+        
+        WriteSettings(settings)
+        
+    def change_gps_value(self, value, index):
+        print(value, index)
+        self.calibrate_gps[index] = value
+        
     def point_button(self):
         self.calibrate_point_index = 0 if self.calibrate_point_button.isChecked() == False else 1
         self.calibrate_point_button.setText(f'Point {self.calibrate_point_index+1}')
@@ -177,33 +197,56 @@ class Ui(QMainWindow):
         self.calibrate_gps1_input.setValue(settings['calibrate'][self.calibrate_point_index]["gps"][0])
         self.calibrate_gps2_input.setValue(settings['calibrate'][self.calibrate_point_index]["gps"][1])
         
+        self.image_click(self.calibrate_dot_coordinates[self.calibrate_point_index], True)
+        
         print(self.calibrate_point_index, self.calibrate_point_button.isChecked())
     
-    def update_calibration_settings(self, setting, coordinate_index, value):
-        settings['calibrate'][self.calibrate_point_index][setting][coordinate_index] = value
-        print(value)
         
-    def image_click(self, coordinates):
+    def image_click(self, coordinates, image = False):
         print(coordinates)
-        #Convert click coordinates to scene coordinates
-        scene_pos = self.calibrate_viewer.mapToScene(coordinates[0], coordinates[1])
         
-        #Get the item at the scene coordinates
-        item = self.calibrate_viewer.scene().itemAt(scene_pos, self.calibrate_viewer.transform())
-        if isinstance(item, QGraphicsPixmapItem):
-            #Convert scene coordinates to local coordinates of the image
-            image_pos = item.mapFromScene(scene_pos)
+        color = QColor(Qt.GlobalColor.red)
+        dot_size = 4
+        coordinates = [int(coordinates[0]), int(coordinates[1])]
+        if image:
+            if self.calibrate_selector_dot:
+                self.calibrate_scene.removeItem(self.calibrate_selector_dot)
             
-            x = image_pos.x()
-            y = image_pos.y()
-            #Print the local coordinates of the image
-            print("Clicked on the image at position:", x, y)
+            #Convert scene coordinates to image coordinates
+            image_x = coordinates[0] * self.mask_image.size[0] / self.calibrate_viewer.width()
+            image_y = coordinates[1] * self.mask_image.size[1] / self.calibrate_viewer.height()
             
-            color = QColor(Qt.GlobalColor.red)
-            dot_size = 4
-            if self.selector_dot:
-                self.calibrate_scene.removeItem(self.selector_dot)
-            self.selector_dot = self.calibrate_scene.addEllipse(x - dot_size / 2, y - dot_size / 2, dot_size, dot_size, brush=QBrush(color))
+            #Draw the filled dot on the scene at the image coordinates
+            self.calibrate_selector_dot = self.calibrate_scene.addEllipse(coordinates[0] - dot_size / 2, coordinates[1] - dot_size / 2, dot_size, dot_size, brush=QBrush(color))
+            
+            #Convert click coordinates to scene coordinates
+            scene_pos = self.calibrate_viewer.mapToScene(coordinates[0], coordinates[1])
+            
+            #Get the item at the scene coordinates
+            item = self.calibrate_viewer.scene().itemAt(scene_pos, self.calibrate_viewer.transform())
+            print(item)
+        else:
+            scene_pos = self.calibrate_viewer.mapToScene(coordinates[0], coordinates[1])
+
+            # Get the item at the scene coordinates
+            item = self.calibrate_viewer.scene().itemAt(scene_pos, self.calibrate_viewer.transform())
+            print(item)
+            if isinstance(item, QGraphicsPixmapItem) or isinstance(item, QGraphicsEllipseItem):
+                print('YES')
+                #Convert scene coordinates to local coordinates of the image
+                image_pos = item.mapFromScene(scene_pos)
+
+                x = image_pos.x()
+                y = image_pos.y()
+                #Print the local coordinates of the image
+                print("Clicked on the image at position:", x, y)
+
+                if self.calibrate_selector_dot:
+                    self.calibrate_scene.removeItem(self.calibrate_selector_dot)
+                self.calibrate_selector_dot = self.calibrate_scene.addEllipse(x - dot_size / 2, y - dot_size / 2, dot_size, dot_size, brush=QBrush(color))
+                self.calibrate_dot_coordinates[self.calibrate_point_index] = [x, y]
+
+    
     #MASK CREATION
     def save_mask(self):
         self.mask_image = self.mask_setup_image
@@ -245,7 +288,7 @@ class Ui(QMainWindow):
         #Load the mask image to screen
         path = self.select_file("Images (*.png)", "Select map image", 'open')
         if path != None:
-            self.mask_setup_image = PIL.Image.open(path)
+            self.mask_setup_image = PIL.Image.open(path).convert('RGBA')
             self.mask_setup_array_unchenged = np.array(self.mask_setup_image)
             self.mask_setup_array = self.mask_setup_array_unchenged.copy()
             self.load_image(self.mask_setup_image, self.mask_setup_scene)
@@ -287,9 +330,11 @@ class Ui(QMainWindow):
     def load_image(self, image, scene):
         qImage = QImage(image.tobytes(), image.size[0], image.size[1], QImage.Format.Format_RGBA8888)
         pixmap = QPixmap.fromImage(qImage)
-        
-        scene.clear()
+        for item in scene.items():
+            if isinstance(item, QGraphicsPixmapItem):
+                scene.removeItem(item)
         scene.addPixmap(pixmap)
+        scene.setSceneRect(0, 0, pixmap.width(), pixmap.height())
         
     
     def select_file(self, fileType, message, action, forceFileType = None):
