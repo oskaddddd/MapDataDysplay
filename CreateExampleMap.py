@@ -4,7 +4,7 @@ from perlin_noise import PerlinNoise
 
 grid = False
 
-n = 10000
+n = 5000
 corners = [[53.85405444949857, 20.840097270351063], [56.60326420819254, 27.22864675471188]]
 cy = sorted([corners[0][1], corners[1][1]])
 cx = sorted([corners[0][0], corners[1][0]])
@@ -39,7 +39,7 @@ else:
     ran = [13, 60]
     cy = [int(cy[0]*10**10), int(cy[1]*10**10)]
     cx = [int(cx[0]*10**10), int(cx[1]*10**10)]
-    noise = PerlinNoise(octaves=5, seed=random.randrange(100, 100000))
+    noise = PerlinNoise(octaves=1, seed=random.randrange(100, 100000))
     x = 1
     for _ in range(n):
         

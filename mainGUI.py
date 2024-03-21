@@ -33,7 +33,14 @@ class ClickableGraphicsView(QGraphicsView):
             self.clicked.emit((event.pos().x(), event.pos().y()))
 
 
-                
+class CustomDoubleSpinbox(QDoubleSpinBox):
+    def validate(self, text: str, pos: int) -> object:
+        text = text.replace(".", ",")
+        return QDoubleSpinBox.validate(self, text, pos)
+
+    def valueFromText(self, text: str) -> float:
+        text = text.replace(",", ".")
+        return float(text)            
 
 class Ui(QMainWindow):
     def __init__(self):
@@ -163,7 +170,7 @@ class Ui(QMainWindow):
 
         self.calibrate_viewer.clicked.connect(lambda coordinates: self.image_click(coordinates))
         
-        self.calibrate_save_button
+        self.calibrate_save_button.clicked.connect(self.save_calibration)
         
         #Load data button
         self.load_data_button.clicked.connect(self.prepare_data)
@@ -184,11 +191,12 @@ class Ui(QMainWindow):
         settings['calibrate'][0]['pixel'] = self.calibrate_dot_coordinates[0]
         settings['calibrate'][1]['pixel'] = self.calibrate_dot_coordinates[1]
         
+        self.prepare_data()
         WriteSettings(settings)
         
     def change_gps_value(self, value, index):
         print(value, index)
-        self.calibrate_gps[index] = value
+        self.calibrate_gps[self.calibrate_point_index][index] = value
         
     def point_button(self):
         self.calibrate_point_index = 0 if self.calibrate_point_button.isChecked() == False else 1

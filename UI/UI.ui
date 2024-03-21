@@ -50,7 +50,7 @@
            <enum>QTabWidget::Rounded</enum>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <property name="documentMode">
            <bool>true</bool>
@@ -142,14 +142,14 @@
            </attribute>
            <layout class="QGridLayout" name="gridLayout_9">
             <item row="1" column="4">
-             <widget class="QDoubleSpinBox" name="calibrate_gps2_input">
+             <widget class="CustomDoubleSpinbox" name="calibrate_gps2_input">
               <property name="decimals">
                <number>15</number>
               </property>
              </widget>
             </item>
             <item row="1" column="3">
-             <widget class="QDoubleSpinBox" name="calibrate_gps1_input">
+             <widget class="CustomDoubleSpinbox" name="calibrate_gps1_input">
               <property name="decimals">
                <number>15</number>
               </property>
@@ -178,7 +178,7 @@
             <item row="1" column="7">
              <widget class="QPushButton" name="calibrate_save_button">
               <property name="text">
-               <string>Save</string>
+               <string>Calibrate</string>
               </property>
              </widget>
             </item>
@@ -760,7 +760,7 @@
      <x>0</x>
      <y>0</y>
      <width>797</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>
@@ -770,6 +770,11 @@
   <customwidget>
    <class>ClickableGraphicsView</class>
    <extends>QGraphicsView</extends>
+   <header>mainGUI</header>
+  </customwidget>
+  <customwidget>
+   <class>CustomDoubleSpinbox</class>
+   <extends>QDoubleSpinBox</extends>
    <header>mainGUI</header>
   </customwidget>
  </customwidgets>
