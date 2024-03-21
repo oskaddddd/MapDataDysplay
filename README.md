@@ -1,34 +1,17 @@
-#This tool tries to provide an easy way of representing data on maps, the input data is provided in the form of a json but there is a parser for excel files (atm it still needs some work, if the field in excel is not a a value but a formula is can not parse it). 
+# Mapplot
 
-To use the tool you first need to get a mask image of the map you'll want to use, its better if the map is one color. Input the name of the image file in ImageName.txt. Then run the preapere mask script. In the output image the map region should be fully collored and the areas around the map should be transparent. You can tweak the Inverse and Threashold values in PreapereMask.py till you have the desired result.
+Mapplot makes it easy to represent your data on a map. 
+![map](https://github.com/oskaddddd/Mapplot/assets/105368582/d3d9f0df-0452-479b-9621-d726b2a179ca)
 
-Once you have the mask, you need to calibrate the map to real life coordinates. Run the Calibration script, with the mouse and arrow keys select a point on the map, then on google maps select the right click on the same point and copy the coordinates, paste them into the input field on the program and submit the points. Repeat for the second point. Its better if points are far appart horizontally and vertically.
 
-Then either parse the data from an excel file or import your json. And run the dataDysplay.py script. 
+# How to use 
 
-This is still an alpha version so its usable but may have alot of bugs and isnt really polished. This is my school project.
+Currently, the project is still abit of a mess. To run it you download the source and run **mainGUI.py**. 
 
-To use this tool you need to have python installed and these libs: pillow, tkinter, scypy, pyopencl, numpy, screeninfo, openpyxl
+You need to have these libraries installed:
 
-settings.json:
--ImageName: The name of the mask image.
--Mode:
-    0 - Black and White (white - high, black - low)
-    1 - RGB (Red - high, Green - mid, Blue - low)
-    2 - RG (Green - high, Red - Low)
-    3 - RB (Red - high, Blue - low)
--CreateAgenda: True or false, weather you want to create a legend.
--AgendaVerticalAlignment: A value from 0 to 1, where 0 is the top of the image, 1 is bottom and for example 0.5 is the middle.
--AgendaHorizontalAlignment: Left or right.
--AgendaOffsetFromMap: How many pixels the legend is offset from the map.
--AgendaScale: How big the legend is compared to the map image, for example with a value of 0.5, the legend would be half as big as the map.
--AgendaSteps: How many sections will the agenda be devided into.
--SectionMap: true or false, if true will section the map into a sections based on the value of points. The amount of sections is determined by the AgendaSteps setting.
--AgendaTextScale: How big the text is compared to a single section in the legend.
--AgendaRoundDataTo: How many digits to leave after the comma in agenda text.
+    pip install pyqt6 pyqtdarktheme pillow numpy pyopencl scipy 
+   
+  Now in the GUI (Setup / Make mask) press **Select mask image** and select an image of the map for the region you want to create the map of. Then move the slider until the main region of your map is colored white. After that's done, simply press **Save mask**. 
 
--DataType: grid or random, depends if your geographical data is in a grid or scatered randomly.
--Computation: cpu or opencl, not all data types might support opencl computation. You need to have a device which supports opencl and has opencl drivers installed.
--OpenCl interactive: true or false, if true and using the opencl computation mode allows you to choose which device to perform the computations on, if false and using opencl computation mode, it will use the first opencl compatible device. This setting doesnt matter if using cpu computation mode.
-
-Compiled version download: https://mega.nz/file/LJdCgT4a#Ty-Lf7OvDl6xyg6ocmzBWN4al5blQtY2x7JM0t7WoPA
+The next step is to calibrate the mask, so the program knows how to map real world coordinates onto it. You can do that in the (Setup / Calibration) section of the GUI. You will need to select 2 points on the newly created mask of the map, and find the real world coordinates for that location. Do this by clicking on the map to select a point, then enter the coordinates for said point. You can switch between points by pressing the **Point 1** or **Point 2** button. 
