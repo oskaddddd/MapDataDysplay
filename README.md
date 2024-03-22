@@ -14,4 +14,6 @@ You need to have these libraries installed:
    
   Now in the GUI (Setup / Make mask) press **Select mask image** and select an image of the map for the region you want to create the map of. Then move the slider until the main region of your map is colored white. After that's done, simply press **Save mask**. 
 
-The next step is to calibrate the mask, so the program knows how to map real world coordinates onto it. You can do that in the (Setup / Calibration) section of the GUI. You will need to select 2 points on the newly created mask of the map, and find the real world coordinates for that location. Do this by clicking on the map to select a point, then enter the coordinates for said point. You can switch between points by pressing the **Point 1** or **Point 2** button. 
+The next step is to calibrate the mask, so the program knows how to map real world coordinates onto it. You can do that in the (Setup / Calibration) section of the GUI. You will need to select 2 points on the newly created mask of the map, and find the real world coordinates for that location. Do this by clicking on the map to select a point, then enter the coordinates for said point. You can switch between points by pressing the **Point 1** or **Point 2** button. Next press  **Calibrate**, select the file containing your data and you're done. 
+
+All you have to do now is go to the (Create map) section and press **Create**
