@@ -250,8 +250,12 @@ class Ui(QMainWindow):
     #MASK CREATION
     def save_mask(self):
         self.mask_image = self.mask_setup_image
+        self.mask_image.convert('1')
+        test = np.array(self.mask_image)
+        print(test[300][200])
+        
         self.load_image(self.mask_image, self.calibrate_scene)
-        self.save_image(self.mask_setup_image, "mask.png")
+        self.save_image(self.mask_image, "mask.png")
         
     def update_mask(self, threashold):
         inverse = True
@@ -276,7 +280,8 @@ class Ui(QMainWindow):
         
         #Update the mask image according to the newly created mask     
         self.mask_setup_array[:, :, :] = 255
-        self.mask_setup_array[mask, 3] = 0
+        self.mask_setup_array[mask, :] = 0
+        #print(self.mask_setup_array)
         print(threashold, inverse)
         self.mask_setup_image = PIL.Image.fromarray(self.mask_setup_array)
         

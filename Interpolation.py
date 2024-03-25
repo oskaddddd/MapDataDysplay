@@ -13,48 +13,62 @@ os.environ['PYOPENCL_NO_CACHE'] = '1'
 
 
 class interpolate_delauny_gpu():
-    def __init__(self, interactive = False) -> None:
+    def __init__(self, points:np.ndarray, mask:PIL.Image.Image, maxMin:tuple, colorMode = 1, monocolorValues = None, clip = True, interactive = False):
+        #Seperate the values of the points from said points
+        self.pointValues = points[:, 2]
+        self.points = points[:, :2]
+
+        self.colorMode = colorMode
+        
+        #Determine the maximum and minimum value of the points
+        self.minVal = maxMin[0]
+        self.maxVal = maxMin[1]
+            
+
+        #Determines what shade of color will a value be
+        self.valueImpact = (self.maxVal-self.minVal)/255
+
+        #Create other class values
+        self.monocolorValues = monocolorValues
+        self.mask = mask
+        self.clip = clip
+        self.resolution = mask.size
+
+        self.mask = np.array(self.mask)
+        
+        #Opencl stuff
         self.ctx = cl.create_some_context(interactive=interactive)
         self.queue = cl.CommandQueue(self.ctx)
         self.mf = cl.mem_flags
         
-    def createPixelBuffer(self, resolution = None, Points = None, Image =None) -> list: #width, height
+    def createPixelBuffer(self) -> list: #width, height
         Dots = []
-        if resolution != None and Points == None:
-            x_coords = np.arange(resolution[0])
-            y_coords = np.arange(resolution[1])
-            xx, yy = np.meshgrid(x_coords, y_coords)
-            Dots = np.dstack((xx, yy, np.zeros_like(xx)))
-            self.res = np.ones((resolution[1], resolution[0], 4), dtype=Dots.dtype)
         
-        #print(self.res.shape, Dots.shape)  
-        self.pixels = Dots
-        self.pixelBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = Dots.nbytes)
-        cl.enqueue_copy(self.queue, self.pixelBuffer, self.pixels)
+    
+        self.output = np.zeros((self.resolution[1], self.resolution[0], 4), dtype=np.uint8)
+         
+        self.maskImageBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = self.mask.nbytes)
+        cl.enqueue_copy(self.queue, self.maskImageBuffer, self.pixels)
         
-        self.destBuffer = cl.Buffer(self.ctx, flags = self.mf.WRITE_ONLY, size = self.res.nbytes)
+        self.destBuffer = cl.Buffer(self.ctx, flags = self.mf.WRITE_ONLY, size = self.output.nbytes)
         
-        imageArr = np.array(Image, dtype=Dots.dtype)
+        imageArr = np.array(self.mask, dtype=Dots.dtype)
         self.imageBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = imageArr.nbytes)
         cl.enqueue_copy(self.queue, self.imageBuffer, imageArr)
         #print(imageArr)
          
         #print(Dots.nbytes, self.pixels.nbytes, Dots.nbytes*2, 'lajkshflkahsjl;kkksskkssklalala')
-        self.image = Image
+        self.mask = self.mask
         return Dots
     
-    def createTriangles(self, points, maxMin,Mode = 0 ,showTriangles = False):
-        '''Modes:\n
-        0 - Black and White (white - high, black - low)\n
-        1 - RGB (Red - high, Green - mid, Blue - low)\n
-        2 - RG (Green - high, Red - Low)\n
-        3 - RB (Red - high, Blue - low)'''
+    def createTriangles(self, showTriangles = False):
+        
         #ogPoints = points.copy()
         p = points[:, 2]
         points = points[:, :2]
         
-        m = maxMin[0]
-        l = maxMin[1]
+        m = self.maxMin[0]
+        l = self.maxMin[1]
 
         tri = Delaunay(points)
         
@@ -73,7 +87,7 @@ class interpolate_delauny_gpu():
         cl.enqueue_copy(self.queue, self.triBuffer, self.triangles)
         
         #size0, size1, sizeZ, sizeTri, maxVal, minVal, mode
-        self.data = np.array([self.image.size[0], self.image.size[1], 3, int(self.triangles.size/9),m, l, Mode])
+        self.data = np.array([self.mask.size[0], self.mask.size[1], 3, int(self.triangles.size/9),m, l, Mode])
         self.sizeBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = self.data.nbytes)
         cl.enqueue_copy(self.queue, self.sizeBuffer, self.data)
         return output
@@ -87,8 +101,8 @@ class interpolate_delauny_gpu():
         
         prg.Bilinear(self.queue, (self.data[0], self.data[1]), None, self.triBuffer, self.destBuffer, self.sizeBuffer, self.imageBuffer)
         
-        cl.enqueue_copy(self.queue, self.res, self.destBuffer)
-        return self.res
+        cl.enqueue_copy(self.queue, self.output, self.destBuffer)
+        return self.output
 
 
 class interpolate_delauny_cpu():
@@ -188,7 +202,7 @@ class interpolate_delauny_cpu():
                 #Create a list of y coordinates  
                 yList = np.arange(start=min(yRange), stop = max(yRange))
                 for y in yList:
-                    if self.mask[y][x][3] == 0:
+                    if self.mask[y][x][0] == 0:
                         continue
                     
                     #Break the triangle into 3 by creating edge from curent point to vertecies of triangle
