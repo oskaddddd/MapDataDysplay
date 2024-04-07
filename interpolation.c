@@ -1,12 +1,16 @@
-kernel void Bilinear(global int *triangles, global int *out, global int *data, global int *Image) {
+kernel void DelaunyInterpolation(global int *triangles, global unsigned char *mask,
+                                 global unsigned short int *sizes, global float *gradientInfo, global int *maxMin) {
+    //Get the global ids
+    int gidY = get_global_id(1);
+    int gidX = get_global_id(0);
+
+
+    int index = gidY*sizes[0]*4 + gidX*4;
     
-    int g1 = get_global_id(1);
-    int g0 = get_global_id(0);
-    int index = g1 * data[0] * data[2] + g0 * data[2];
-    int indexOut = g1*data[0]*4+g0*4;
-    int i = 0;
     
-    if (Image[indexOut + 3] == 255){
+    
+    if (mask[index] == 255){
+        int i = 0;
         for (i = 0; i < data[3]; i++){
             int tri[9];
             int i1 = 0;
@@ -14,9 +18,9 @@ kernel void Bilinear(global int *triangles, global int *out, global int *data, g
                 tri[i1] = triangles[i1+i*9];
             }
             float a = fabs((float)tri[0]*(tri[4]-tri[7]) + tri[3]*(tri[7]-tri[1]) + tri[6]* (tri[1]-tri[4]));
-            float a1 = fabs((float)g0*(tri[4]-tri[7]) + tri[3]*(tri[7]-g1) + tri[6]* (g1-tri[4]));
-            float a2 = fabs((float)tri[0]*(g1-tri[7]) + g0*(tri[7]-tri[1]) + tri[6]* (tri[1]-g1));
-            float a3 = fabs((float)tri[0]*(tri[4]-g1) + tri[3]*(g1-tri[1]) + g0* (tri[1]-tri[4]));
+            float a1 = fabs((float)gidX*(tri[4]-tri[7]) + tri[3]*(tri[7]-gidY) + tri[6]* (gidY-tri[4]));
+            float a2 = fabs((float)tri[0]*(gidY-tri[7]) + gidX*(tri[7]-tri[1]) + tri[6]* (tri[1]-gidY));
+            float a3 = fabs((float)tri[0]*(tri[4]-gidY) + tri[3]*(gidY-tri[1]) + gidX* (tri[1]-tri[4]));
             if(fabs((a1 + a2 + a3) -a) < 0.0001){
                 int A = tri[2];
                 int B = tri[5];

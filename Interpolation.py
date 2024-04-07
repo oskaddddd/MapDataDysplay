@@ -13,23 +13,24 @@ os.environ['PYOPENCL_NO_CACHE'] = '1'
 
 
 class interpolate_delauny_gpu():
-    def __init__(self, points:np.ndarray, mask:PIL.Image.Image, maxMin:tuple, colorMode = 1, monocolorValues = None, clip = True, interactive = False):
+    def __init__(self, points:np.ndarray, mask:PIL.Image.Image, maxMin:tuple, gradientInfo, clip = True, interactive = False):
         #Seperate the values of the points from said points
         self.pointValues = points[:, 2]
         self.points = points[:, :2]
 
-        self.colorMode = colorMode
+        self.gradientInfo = gradientInfo
         
         #Determine the maximum and minimum value of the points
         self.minVal = maxMin[0]
         self.maxVal = maxMin[1]
+        
+        self.maxMin = np.array(maxMin, dtype=np.int32)
             
 
         #Determines what shade of color will a value be
         self.valueImpact = (self.maxVal-self.minVal)/255
 
         #Create other class values
-        self.monocolorValues = monocolorValues
         self.mask = mask
         self.clip = clip
         self.resolution = mask.size
@@ -40,68 +41,69 @@ class interpolate_delauny_gpu():
         self.ctx = cl.create_some_context(interactive=interactive)
         self.queue = cl.CommandQueue(self.ctx)
         self.mf = cl.mem_flags
-        
-    def createPixelBuffer(self) -> list: #width, height
-        Dots = []
-        
-    
-        self.output = np.zeros((self.resolution[1], self.resolution[0], 4), dtype=np.uint8)
+
          
-        self.maskImageBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = self.mask.nbytes)
-        cl.enqueue_copy(self.queue, self.maskImageBuffer, self.pixels)
+    def CreateBuffers(self, showTriangles = False):
         
-        self.destBuffer = cl.Buffer(self.ctx, flags = self.mf.WRITE_ONLY, size = self.output.nbytes)
-        
-        imageArr = np.array(self.mask, dtype=Dots.dtype)
-        self.imageBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = imageArr.nbytes)
-        cl.enqueue_copy(self.queue, self.imageBuffer, imageArr)
-        #print(imageArr)
-         
-        #print(Dots.nbytes, self.pixels.nbytes, Dots.nbytes*2, 'lajkshflkahsjl;kkksskkssklalala')
-        self.mask = self.mask
-        return Dots
-    
-    def createTriangles(self, showTriangles = False):
-        
-        #ogPoints = points.copy()
+        #Create the points array seperated from values
         p = points[:, 2]
         points = points[:, :2]
         
-        m = self.maxMin[0]
-        l = self.maxMin[1]
-
+        #Calculate the triangles
         tri = Delaunay(points)
         
-        output = np.empty((tri.simplices.shape[0], 3, 3), dtype=self.pixels.dtype)
-
+        #Convert the triangles to a usable format
+        triangles = np.empty((tri.simplices.shape[0], 3, 3), dtype=np.int32)
         for i, simplex in enumerate(tri.simplices):
             triangle = [np.array([points[index][0], points[index][1], p[index]]) for index in simplex]
-            output[i] = triangle
-        #print(output)
-
-        #output = np.array(output)
+            self.triangles[i] = triangle
         
-        self.triangles = output
-        print(output.dtype)
-        self.triBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = output.nbytes)
-        cl.enqueue_copy(self.queue, self.triBuffer, self.triangles)
+        #Create the triangle buffer and copy the data to it
+        self.triBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = triangles.nbytes)
+        cl.enqueue_copy(self.queue, self.triBuffer, triangles)
         
-        #size0, size1, sizeZ, sizeTri, maxVal, minVal, mode
-        self.data = np.array([self.mask.size[0], self.mask.size[1], 3, int(self.triangles.size/9),m, l, Mode])
-        self.sizeBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = self.data.nbytes)
-        cl.enqueue_copy(self.queue, self.sizeBuffer, self.data)
-        return output
+        
+        #Create the mask buffer and copy the data to it
+        self.imageBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = self.mask.nbytes)
+        cl.enqueue_copy(self.queue, self.imageBuffer, self.mask)
+        
+        
+        #Create the buffers for max and min values
+        self.maxMinBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = self.maxMin.nbytes)
+        cl.enqueue_copy(self.queue, self.maxMinBuffer, self.maxMin)
+        
+        
+        #Create the gradient info buffer
+        gradientInfoFlat = np.zeros((len(self.gradientInfo), 4), dtype=np.float32)
+        for i in range(len(self.gradientInfo)):
+            gradientInfoFlat[i] = np.array([*self.gradientInfo[i]['color'], self.gradientInfo[i]['position']])
+        self.gradientInfoBuffer = cl.Buffer(self.ctx, flasg = self.mf.READ_ONLY, size = gradientInfoFlat.nbytes)
+        cl.enqueue_copy(self.queue, self.gradientInfoBuffer, self.gradientInfo)
+        
+        
+        #Create the buffers for the sies of arrays
+        sizes = np.array(self.mask.size[0], self.mask.size[1], self.triangles.shape[0], dtype=np.uint16)
+        self.sizeBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = sizes.nbytes)
+        cl.enqueue_copy(self.queue, self.sizeBuffer, sizes)
     
-    def compute(self):
+        
+        
+
+    
+    def Compute(self):
         programSource = ''
         with open('interpolation.c', 'r') as f:
             programSource = f.read()
             
         prg = cl.Program(self.ctx, programSource).build()
         
-        prg.Bilinear(self.queue, (self.data[0], self.data[1]), None, self.triBuffer, self.destBuffer, self.sizeBuffer, self.imageBuffer)
+        prg.DelaunyInterpolation(self.queue, (self.mask.size[0], self.mask.size[1]), None,\
+            self.triBuffer, self.imageBuffer,\
+            self.sizeBuffer, self.gradientInfoBuffer, self.maxMinBuffer)
         
-        cl.enqueue_copy(self.queue, self.output, self.destBuffer)
+        self.output = np.zeros((self.resolution[1], self.resolution[0], 4), dtype=np.uint8)
+        cl.enqueue_copy(self.queue, self.output, self.imageBuffer)
+        
         return self.output
 
 
@@ -151,15 +153,7 @@ class interpolate_delauny_cpu():
 
     
     def CreateTriangles(self):
-        
 
-        '''Modes:\n
-        0 - Black and White (white - high, black - low)\n
-        1 - RGB (Red - high, Green - mid, Blue - low)\n
-        2 - RG (Green - high, Red - Low)'''
-
-        self.colorMode
-        self.monocolorValues = self.monocolorValues
         #Create the triangles from the points
         triangles = Delaunay(self.points)
 

@@ -122,7 +122,7 @@ class create_map():
                 creator = Interpolation.interpolate_delauny_gpu(False)
                 creator.createPixelBuffer(self.image.size, Image=self.image)
                 creator.createTriangles(points=self.points, maxMin=self.maxMin ,Mode=mode, showTriangles=False)
-                output = creator.compute()  
+                output = creator.Compute()  
                 
         #Delauny interpolation on the cpu 
         else:
