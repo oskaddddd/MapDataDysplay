@@ -1,26 +1,61 @@
+
+
 kernel void DelaunyInterpolation(global int *triangles, global unsigned char *mask,
                                  global unsigned short int *sizes, global float *gradientInfo, global int *maxMin) {
-    //Get the global ids
-    int gidY = get_global_id(1);
-    int gidX = get_global_id(0);
+    //Get the global id
+    int gid = get_global_id(0);
+    int index = gid * 9;
+    
+    //Get the triangle
+    int tri[9];
+    int tri[0];
+    if (tri[0] > tri[3]) {
+        for (int i = 0; i < 3; i++){
+            int temp = tri[0+i];
+            tri[0+i] = tri[3+i];
+            tri[3+i] = temp;
+        }
+    }
+    if (tri[3] > tri[6]) {
+        for (int i = 0; i < 3; i++){
+            int temp = tri[3+i];
+            tri[3+i] = tri[6+i];
+            tri[6+i] = temp;
+        }
+    }
+    if (tri[0] > tri[3]) {
+        for (int i = 0; i < 3; i++){
+            int temp = tri[0+i];
+            tri[0+i] = tri[3+i];
+            tri[3+i] = temp;
+        }
+        
+    }
+    for (int i = 0; i < 9; i++) {tri[i] = triangles[index+i];}
+    
 
 
-    int index = gidY*sizes[0]*4 + gidX*4;
-    
-    
-    
-    if (mask[index] == 255){
+    //Check if the point lies inside the mask
+    if (mask[index] > 0){
+
+        //Loop trough all triangles
         int i = 0;
-        for (i = 0; i < data[3]; i++){
+        for (i = 0; i < sizes[2]; i++){
             int tri[9];
+
+            //Put the triangle into an array
             int i1 = 0;
             for (i1 = 0; i1 < 9; i1++){
                 tri[i1] = triangles[i1+i*9];
             }
+
+            //Caluclate the areas of the triangles
             float a = fabs((float)tri[0]*(tri[4]-tri[7]) + tri[3]*(tri[7]-tri[1]) + tri[6]* (tri[1]-tri[4]));
             float a1 = fabs((float)gidX*(tri[4]-tri[7]) + tri[3]*(tri[7]-gidY) + tri[6]* (gidY-tri[4]));
             float a2 = fabs((float)tri[0]*(gidY-tri[7]) + gidX*(tri[7]-tri[1]) + tri[6]* (tri[1]-gidY));
             float a3 = fabs((float)tri[0]*(tri[4]-gidY) + tri[3]*(gidY-tri[1]) + gidX* (tri[1]-tri[4]));
+
+            //Check if the pixel belongs to the triangles 
             if(fabs((a1 + a2 + a3) -a) < 0.0001){
                 int A = tri[2];
                 int B = tri[5];
