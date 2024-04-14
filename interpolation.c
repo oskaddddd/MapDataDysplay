@@ -1,4 +1,5 @@
 
+#define middle(a, b, c) (((b) >= (a) && (b) <= (c)) ? (b) : (((b) < (a)) ? (a) : (c)))
 
 kernel void DelaunyInterpolation(global int *triangles, global unsigned char *mask,
                                  global unsigned short int *sizes, global float *gradientInfo, global int *maxMin) {
@@ -6,9 +7,9 @@ kernel void DelaunyInterpolation(global int *triangles, global unsigned char *ma
     int gid = get_global_id(0);
     int index = gid * 9;
     
-    //Get the triangle
+    //Get and sort the triangle
     int tri[9];
-    int tri[0];
+    for (int i = 0; i < 9; i++) {tri[i] = triangles[index+i];}
     if (tri[0] > tri[3]) {
         for (int i = 0; i < 3; i++){
             int temp = tri[0+i];
@@ -31,95 +32,110 @@ kernel void DelaunyInterpolation(global int *triangles, global unsigned char *ma
         }
         
     }
-    for (int i = 0; i < 9; i++) {tri[i] = triangles[index+i];}
-    
 
 
-    //Check if the point lies inside the mask
-    if (mask[index] > 0){
+    float k01 = 0;
+    float k12 = 0;
+    float k02 = 0;
 
-        //Loop trough all triangles
-        int i = 0;
-        for (i = 0; i < sizes[2]; i++){
-            int tri[9];
+    bool b01 = true;
+    bool b12 = true;
 
-            //Put the triangle into an array
-            int i1 = 0;
-            for (i1 = 0; i1 < 9; i1++){
-                tri[i1] = triangles[i1+i*9];
-            }
+    float a01 = 0;
+    float a12 = 0;
+    float a02 = 0;
 
-            //Caluclate the areas of the triangles
-            float a = fabs((float)tri[0]*(tri[4]-tri[7]) + tri[3]*(tri[7]-tri[1]) + tri[6]* (tri[1]-tri[4]));
-            float a1 = fabs((float)gidX*(tri[4]-tri[7]) + tri[3]*(tri[7]-gidY) + tri[6]* (gidY-tri[4]));
-            float a2 = fabs((float)tri[0]*(gidY-tri[7]) + gidX*(tri[7]-tri[1]) + tri[6]* (tri[1]-gidY));
-            float a3 = fabs((float)tri[0]*(tri[4]-gidY) + tri[3]*(gidY-tri[1]) + gidX* (tri[1]-tri[4]));
+    float tempF;
+    if (tri[3] - tri[0] != 0){
+        tempF = (tri[4]-tri[1]);
+        k01 = tempF/(tri[3]-tri[0]);
+        a01 = tempF*k01;
+    }
+    else{
+        b01 = false;
+    }
+    if (tri[3] - tri[6] != 0){
+        tempF = (tri[4]-tri[7]);
+        k12 = tempF/(tri[3]-tri[6]);
+        a12 = tempF*k12;
+    }
+    else{
+        b12 = false;
+    }
 
-            //Check if the pixel belongs to the triangles 
-            if(fabs((a1 + a2 + a3) -a) < 0.0001){
-                int A = tri[2];
-                int B = tri[5];
-                int C = tri[8];
-                float n = ((A*a1+B*a2+C*a3)/(a1+a2+a3))-data[5];
-                if (data[6] == 0){
-                    float o = n*(255/(data[4]-data[5]));
-                    out[indexOut] = o;
-                    out[indexOut+1] = o;
-                    out[indexOut+2] = o;
-                    out[indexOut+3] = 255;
-                }
-                else if (data[6] == 1){
-                    float p = (data[4]-data[5])*0.25;
-                    if (n >= p*2.7){
-                        out[indexOut+1] = (((p*4)-n)/(p*1.3))*255;
-                        out[indexOut] = 255;
-                    }
-                    else if (n >= p*2 && n < p*2.7){
-                        out[indexOut] = ((n-p*2)/(p*0.7))*255;
-                        out[indexOut+1] = 255;
-                    }
-                    else if (n >= p*1.3 && n < p*2){
-                        out[indexOut+2] = ((2*p-n)/(p*0.7))*255;
-                        out[indexOut+1] = 255;
-                    }
-                    if (n < p*1.3){
-                        out[indexOut+1] = (n/(p*1.3))*255;
-                        out[indexOut+2] = 255;
-                    }
-                    out[indexOut+3] = 255;
-                }
-                else if (data[6] == 2){
-                    float p = (data[4]-data[5])*0.5;
-                    if (n >= p){
-                        out[indexOut] = 255;
-                        out[indexOut+1] = (p*2-n)/p * 255;
-                    }
-                    else if (n < p){
-                        out[indexOut+1] = 255;
-                        out[indexOut] = (n)/p * 255;
-                    }
-                    out[indexOut+3] = 255;
-                }
-                else if (data[6] == 3){
-                    float p = (data[4]-data[5])*0.5;
-                    if (n > p){
-                        out[indexOut] = 255;
-                        out[indexOut+2] = (p*2-n)/p * 200;
-                    }
-                    else if (n < p){
-                        out[indexOut+2] = 200;
-                        out[indexOut] = n/p * 255;
-                    }
-                    out[indexOut+3] = 255;
-                }
-                break;
-            }
+    tempF = (tri[1]-tri[7]);
+    k02 = tempF/(tri[0]-tri[6]);
+    a02 = tempF*k02;
+
+    int xRange[3];
+    xRange[0] = middle(0, tri[0], sizes[2]);
+    xRange[0] = middle(0, tri[3], sizes[2]);
+    xRange[0] = middle(0, tri[6], sizes[2]);
+
+    int yRange[2];
+    int tempI;
+
+    int maskIndex;
+    //Loop trought the forst part of the triangle
+    for (int x = xRange[0]; x < xRange[1]; x++){
+        
+        //Calculate the Y ranges
+        yRange[0] = middle(0, ceil(k01*x*a01), sizes[1]);
+        yRange[1] = middle(0, ceil(k02*x*a02), sizes[1]);
+        if (yRange[0] > yRange[1]){
+            tempI = yRange[0];
+            yRange[0] = yRange[1];
+            yRange[1] = tempI;
         }
-        if(out[indexOut+3] != 255){
-            out[indexOut] = Image[indexOut];
-            out[indexOut+1] = Image[indexOut+1];
-            out[indexOut+2] = Image[indexOut+2];
-            out[indexOut+3] = Image[indexOut+3];
+
+        //Loop trought the Y values
+        for (int y =yRange[0]; y < yRange[1]; y++){
+            maskIndex = 4*(y*sizes[0]+x);
+            //Check if mask is Null
+            if (mask[maskIndex] == 0){
+                continue;
+            }
+            unsigned float a = fabs(tri[0] * (tri[4] - y) + tri[3] * (y - tri[1]) + x * (tri[1] - tri[4]));
+            unsigned float b = fabs(tri[0] * (y - tri[7]) + x * (tri[7] - tri[1]) + tri[6] * (tri[1] - y));
+            unsigned float c = fabs(x * (tri[4] - tri[7]) + tri[3] * (tri[7] - y) + tri[6] * (y - tri[4]));
+
+            unsigned float val = (tri[8] * a + tri[5] * b + tri[2] * c) / (a + b + c);
+
+            mask[maskIndex] = val;
+
         }
     }
-}
+    for (int x = xRange[1]; x < xRange[2]; x++){
+        
+        //Calculate the Y ranges
+        yRange[0] = middle(0, ceil(k12*x*a12), sizes[1]);
+        yRange[1] = middle(0, ceil(k02*x*a02), sizes[1]);
+        if (yRange[0] > yRange[1]){
+            tempI = yRange[0];
+            yRange[0] = yRange[1];
+            yRange[1] = tempI;
+        }
+
+        //Loop trought the Y values
+        for (int y =yRange[0]; y < yRange[1]; y++){
+            maskIndex = 4*(y*sizes[0]+x);
+            //Check if mask is Null
+            if (mask[maskIndex] == 0){
+                continue;
+            }
+            unsigned float a = fabs(tri[0] * (tri[4] - y) + tri[3] * (y - tri[1]) + x * (tri[1] - tri[4]));
+            unsigned float b = fabs(tri[0] * (y - tri[7]) + x * (tri[7] - tri[1]) + tri[6] * (tri[1] - y));
+            unsigned float c = fabs(x * (tri[4] - tri[7]) + tri[3] * (tri[7] - y) + tri[6] * (y - tri[4]));
+
+            unsigned float val = (tri[8] * a + tri[5] * b + tri[2] * c) / (a + b + c);
+
+            mask[maskIndex] = val;
+
+        }
+    }
+
+
+
+
+    
+    
