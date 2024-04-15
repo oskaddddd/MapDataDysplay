@@ -33,39 +33,31 @@ kernel void DelaunyInterpolation(global int *triangles, global unsigned char *ma
         
     }
 
+    float k[3];
+    k[0] = 0;
+    k[1] = 0;
+    k[2] = 0;
 
-    float k01 = 0;
-    float k12 = 0;
-    float k02 = 0;
-
-    bool b01 = true;
-    bool b12 = true;
-
-    float a01 = 0;
-    float a12 = 0;
-    float a02 = 0;
+    float a[3];
+    a[0] = 0;
+    a[1] = 0;
+    a[2] = 0;
 
     float tempF;
     if (tri[3] - tri[0] != 0){
         tempF = (tri[4]-tri[1]);
-        k01 = tempF/(tri[3]-tri[0]);
-        a01 = tempF*k01;
-    }
-    else{
-        b01 = false;
+        k[0] = tempF/(tri[3]-tri[0]);
+        a[0] = tempF*k[0];
     }
     if (tri[3] - tri[6] != 0){
         tempF = (tri[4]-tri[7]);
-        k12 = tempF/(tri[3]-tri[6]);
-        a12 = tempF*k12;
-    }
-    else{
-        b12 = false;
+        k[1] = tempF/(tri[3]-tri[6]);
+        k[1] = tempF*k[1];
     }
 
     tempF = (tri[1]-tri[7]);
-    k02 = tempF/(tri[0]-tri[6]);
-    a02 = tempF*k02;
+    k[2] = tempF/(tri[0]-tri[6]);
+    a[2] = tempF*k[2];
 
     int xRange[3];
     xRange[0] = middle(0, tri[0], sizes[2]);
@@ -76,63 +68,60 @@ kernel void DelaunyInterpolation(global int *triangles, global unsigned char *ma
     int tempI;
 
     int maskIndex;
-    //Loop trought the forst part of the triangle
-    for (int x = xRange[0]; x < xRange[1]; x++){
-        
-        //Calculate the Y ranges
-        yRange[0] = middle(0, ceil(k01*x*a01), sizes[1]);
-        yRange[1] = middle(0, ceil(k02*x*a02), sizes[1]);
-        if (yRange[0] > yRange[1]){
-            tempI = yRange[0];
-            yRange[0] = yRange[1];
-            yRange[1] = tempI;
-        }
 
-        //Loop trought the Y values
-        for (int y =yRange[0]; y < yRange[1]; y++){
-            maskIndex = 4*(y*sizes[0]+x);
-            //Check if mask is Null
-            if (mask[maskIndex] == 0){
-                continue;
+    int valueRange = maxMin[1]-maxMin[0];
+
+    //Loop trough both sides of the triangle
+    for (int i = 0; i < 2; i++)
+
+        //Loop trought the forst part of the triangle
+        for (int x = xRange[i]; x < xRange[1+i]; x++){
+
+            //Calculate the Y ranges
+            yRange[0] = middle(0, ceil(k[i]*x*a[i]), sizes[1]);
+            yRange[1] = middle(0, ceil(k[2]*x*a[2]), sizes[1]);
+
+            //Sort the yRnages
+            if (yRange[0] > yRange[1]){
+                tempI = yRange[0];
+                yRange[0] = yRange[1];
+                yRange[1] = tempI;
             }
-            unsigned float a = fabs(tri[0] * (tri[4] - y) + tri[3] * (y - tri[1]) + x * (tri[1] - tri[4]));
-            unsigned float b = fabs(tri[0] * (y - tri[7]) + x * (tri[7] - tri[1]) + tri[6] * (tri[1] - y));
-            unsigned float c = fabs(x * (tri[4] - tri[7]) + tri[3] * (tri[7] - y) + tri[6] * (y - tri[4]));
 
-            unsigned float val = (tri[8] * a + tri[5] * b + tri[2] * c) / (a + b + c);
+            //Loop trought the Y values
+            for (int y = yRange[0]; y < yRange[1]; y++){
+                maskIndex = 4*(y*sizes[0]+x);
+                //Check if mask is Null
+                if (mask[maskIndex] == 0){
+                    continue;
+                }
+                unsigned float a = fabs(tri[0] * (tri[4] - y) + tri[3] * (y - tri[1]) + x * (tri[1] - tri[4]));
+                unsigned float b = fabs(tri[0] * (y - tri[7]) + x * (tri[7] - tri[1]) + tri[6] * (tri[1] - y));
+                unsigned float c = fabs(x * (tri[4] - tri[7]) + tri[3] * (tri[7] - y) + tri[6] * (y - tri[4]));
 
-            mask[maskIndex] = val;
+                unsigned float val = (tri[8] * a + tri[5] * b + tri[2] * c) / (a + b + c);
 
-        }
-    }
-    for (int x = xRange[1]; x < xRange[2]; x++){
-        
-        //Calculate the Y ranges
-        yRange[0] = middle(0, ceil(k12*x*a12), sizes[1]);
-        yRange[1] = middle(0, ceil(k02*x*a02), sizes[1]);
-        if (yRange[0] > yRange[1]){
-            tempI = yRange[0];
-            yRange[0] = yRange[1];
-            yRange[1] = tempI;
-        }
+                //Do gradient sruff
+                val = val-maxMin[0]/valueRange;
 
-        //Loop trought the Y values
-        for (int y =yRange[0]; y < yRange[1]; y++){
-            maskIndex = 4*(y*sizes[0]+x);
-            //Check if mask is Null
-            if (mask[maskIndex] == 0){
-                continue;
+                for (int gradI = 0; gradI<sizes[3], gradI++){
+                    if (gradientInfo[gradI*4+1] <= val && val <= gradientInfo[gradI*4+5]){
+
+                        val = (val-gradientInfo[gradI+1])/(gradientInfo[gradI+4+1] - gradientInfo[gradI+1]);
+
+                        for (int colorI; colorI<3; colorI++){
+                            mask[maskIndex+colorI] = gradientInfo[gradI+colorI+1]+val*(gradientInfo[gradI+colorI+5]- gradientInfo[gradI+colorI+1]);
+                        }
+                        mask[maskIndex+4] = 255;
+
+                        break;
+                    }
+                }
+                mask[maskIndex] = val;
+
             }
-            unsigned float a = fabs(tri[0] * (tri[4] - y) + tri[3] * (y - tri[1]) + x * (tri[1] - tri[4]));
-            unsigned float b = fabs(tri[0] * (y - tri[7]) + x * (tri[7] - tri[1]) + tri[6] * (tri[1] - y));
-            unsigned float c = fabs(x * (tri[4] - tri[7]) + tri[3] * (tri[7] - y) + tri[6] * (y - tri[4]));
-
-            unsigned float val = (tri[8] * a + tri[5] * b + tri[2] * c) / (a + b + c);
-
-            mask[maskIndex] = val;
-
         }
-    }
+
 
 
 
