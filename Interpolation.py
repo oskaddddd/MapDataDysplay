@@ -46,21 +46,21 @@ class interpolate_delauny_gpu():
     def CreateBuffers(self, showTriangles = False):
         
         #Create the points array seperated from values
-        p = points[:, 2]
-        points = points[:, :2]
+        #self.pointValues = points[:, 2]
+        #self.points = self.points[:, :2]
         
         #Calculate the triangles
-        tri = Delaunay(points)
+        tri = Delaunay(self.points)
         
         #Convert the triangles to a usable format
-        triangles = np.empty((tri.simplices.shape[0], 3, 3), dtype=np.int32)
+        self.triangles = np.empty((tri.simplices.shape[0], 3, 3), dtype=np.int32)
         for i, simplex in enumerate(tri.simplices):
-            triangle = [np.array([points[index][0], points[index][1], p[index]]) for index in simplex]
+            triangle = [np.array([self.points[index][0], self.points[index][1], self.pointValues[index]]) for index in simplex]
             self.triangles[i] = triangle
         
         #Create the triangle buffer and copy the data to it
-        self.triBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = triangles.nbytes)
-        cl.enqueue_copy(self.queue, self.triBuffer, triangles)
+        self.triBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = self.triangles.nbytes)
+        cl.enqueue_copy(self.queue, self.triBuffer, self.triangles)
         
         
         #Create the mask buffer and copy the data to it

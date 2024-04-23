@@ -119,9 +119,8 @@ class create_map():
             #Delauny triangulation on the gpu
             else:
                 #Do the interpolation
-                creator = Interpolation.interpolate_delauny_gpu(False)
-                creator.createPixelBuffer(self.image.size, Image=self.image)
-                creator.createTriangles(points=self.points, maxMin=self.maxMin ,Mode=mode, showTriangles=False)
+                creator = Interpolation.interpolate_delauny_gpu(self.points, self.image, self.maxMin, self.settings['gradient'], True,True)
+                creator.CreateBuffers()
                 output = creator.Compute()  
                 
         #Delauny interpolation on the cpu 
