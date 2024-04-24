@@ -12,7 +12,7 @@
     "bar_scale": 0.7,
     "bar_width": 2.5,
     "units": "m/s",
-    "computation": "cpu",
+    "computation": "opencl",
     "SectionMap": false,
     "interpolation": "delauny",
     "manual_max_min": false,

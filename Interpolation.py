@@ -77,12 +77,12 @@ class interpolate_delauny_gpu():
         gradientInfoFlat = np.zeros((len(self.gradientInfo), 4), dtype=np.float32)
         for i in range(len(self.gradientInfo)):
             gradientInfoFlat[i] = np.array([*self.gradientInfo[i]['color'], self.gradientInfo[i]['position']])
-        self.gradientInfoBuffer = cl.Buffer(self.ctx, flasg = self.mf.READ_ONLY, size = gradientInfoFlat.nbytes)
-        cl.enqueue_copy(self.queue, self.gradientInfoBuffer, self.gradientInfo)
+        self.gradientInfoBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = gradientInfoFlat.nbytes)
+        cl.enqueue_copy(self.queue, self.gradientInfoBuffer, gradientInfoFlat)
         
         
         #Create the buffers for the sies of arrays
-        sizes = np.array(self.mask.size[0], self.mask.size[1], self.triangles.shape[0], dtype=np.uint16)
+        sizes = np.array((self.mask.shape[0], self.mask.shape[1], self.triangles.shape[0]), dtype=np.uint16)
         self.sizeBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = sizes.nbytes)
         cl.enqueue_copy(self.queue, self.sizeBuffer, sizes)
     
@@ -97,7 +97,7 @@ class interpolate_delauny_gpu():
             
         prg = cl.Program(self.ctx, programSource).build()
         
-        prg.DelaunyInterpolation(self.queue, (self.mask.size[0], self.mask.size[1]), None,\
+        prg.DelaunyInterpolation(self.queue, (self.mask.shape[0], self.mask.shape[1]), None,\
             self.triBuffer, self.imageBuffer,\
             self.sizeBuffer, self.gradientInfoBuffer, self.maxMinBuffer)
         

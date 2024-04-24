@@ -73,7 +73,7 @@ kernel void DelaunyInterpolation(global int *triangles, global unsigned char *ma
 
     //Loop trough both sides of the triangle
     for (int i = 0; i < 2; i++)
-
+    {
         //Loop trought the forst part of the triangle
         for (int x = xRange[i]; x < xRange[1+i]; x++){
 
@@ -95,16 +95,16 @@ kernel void DelaunyInterpolation(global int *triangles, global unsigned char *ma
                 if (mask[maskIndex] == 0){
                     continue;
                 }
-                unsigned float a = fabs(tri[0] * (tri[4] - y) + tri[3] * (y - tri[1]) + x * (tri[1] - tri[4]));
-                unsigned float b = fabs(tri[0] * (y - tri[7]) + x * (tri[7] - tri[1]) + tri[6] * (tri[1] - y));
-                unsigned float c = fabs(x * (tri[4] - tri[7]) + tri[3] * (tri[7] - y) + tri[6] * (y - tri[4]));
+                float a = abs(tri[0] * (tri[4] - y) + tri[3] * (y - tri[1]) + x * (tri[1] - tri[4]));
+                float b = abs(tri[0] * (y - tri[7]) + x * (tri[7] - tri[1]) + tri[6] * (tri[1] - y));
+                float c = abs(x * (tri[4] - tri[7]) + tri[3] * (tri[7] - y) + tri[6] * (y - tri[4]));
 
-                unsigned float val = (tri[8] * a + tri[5] * b + tri[2] * c) / (a + b + c);
+                float val = (tri[8] * a + tri[5] * b + tri[2] * c) / (a + b + c);
 
                 //Do gradient sruff
                 val = val-maxMin[0]/valueRange;
 
-                for (int gradI = 0; gradI<sizes[3], gradI++){
+                for (int gradI = 0; gradI<sizes[3]; gradI++){
                     if (gradientInfo[gradI*4+1] <= val && val <= gradientInfo[gradI*4+5]){
 
                         val = (val-gradientInfo[gradI+1])/(gradientInfo[gradI+4+1] - gradientInfo[gradI+1]);
@@ -121,7 +121,8 @@ kernel void DelaunyInterpolation(global int *triangles, global unsigned char *ma
 
             }
         }
-
+    }
+}
 
 
 
