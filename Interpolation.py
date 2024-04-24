@@ -97,7 +97,7 @@ class interpolate_delauny_gpu():
             
         prg = cl.Program(self.ctx, programSource).build()
         
-        prg.DelaunyInterpolation(self.queue, (self.mask.shape[0], self.mask.shape[1]), None,\
+        prg.DelaunyInterpolation(self.queue, (self.triangles.shape[0]), None,\
             self.triBuffer, self.imageBuffer,\
             self.sizeBuffer, self.gradientInfoBuffer, self.maxMinBuffer)
         

@@ -33,6 +33,8 @@ kernel void DelaunyInterpolation(global int *triangles, global unsigned char *ma
         
     }
 
+
+    //calculate the gradient values for the triangle edges
     float k[3];
     k[0] = 0;
     k[1] = 0;
@@ -59,6 +61,8 @@ kernel void DelaunyInterpolation(global int *triangles, global unsigned char *ma
     k[2] = tempF/(tri[0]-tri[6]);
     a[2] = tempF*k[2];
 
+
+    //Caculate the X ranges for the triangle edges
     int xRange[3];
     xRange[0] = middle(0, tri[0], sizes[2]);
     xRange[0] = middle(0, tri[3], sizes[2]);
@@ -117,7 +121,7 @@ kernel void DelaunyInterpolation(global int *triangles, global unsigned char *ma
                         break;
                     }
                 }
-                mask[maskIndex] = val;
+                //mask[maskIndex] = val;
 
             }
         }
