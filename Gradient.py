@@ -32,7 +32,7 @@ class gradient():
                 #Loop trough the RGB values of the colors
                 for x in range(3):
                     #Get the value of the gradient at point 
-                    interpolatedColor[x] = int((point1['color'][x]+ value*(point2['color'][x]- point1['color'][x])))#/(abs((value-0.5))+0.5))
+                    interpolatedColor[x] = int(point1['color'][x]+ value*(point2['color'][x]- point1['color'][x]))#/(abs((value-0.5))+0.5))
                 #print(interpolatedColor, (abs(2*(value-0.5))+0.5))
                 return interpolatedColor
     

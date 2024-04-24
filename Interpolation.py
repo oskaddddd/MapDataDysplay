@@ -35,7 +35,7 @@ class interpolate_delauny_gpu():
         self.clip = clip
         self.resolution = mask.size
 
-        self.mask = np.array(self.mask)
+        self.mask = np.array(self.mask, dtype=np.uint8)
         
         #Opencl stuff
         self.ctx = cl.create_some_context(interactive=interactive)
@@ -76,13 +76,13 @@ class interpolate_delauny_gpu():
         #Create the gradient info buffer
         gradientInfoFlat = np.zeros((len(self.gradientInfo), 4), dtype=np.float32)
         for i in range(len(self.gradientInfo)):
-            gradientInfoFlat[i] = np.array([*self.gradientInfo[i]['color'], self.gradientInfo[i]['position']])
+            gradientInfoFlat[i] = np.array([self.gradientInfo[i]['position'], *self.gradientInfo[i]['color']], dtype=np.float32)
         self.gradientInfoBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = gradientInfoFlat.nbytes)
         cl.enqueue_copy(self.queue, self.gradientInfoBuffer, gradientInfoFlat)
         
         
         #Create the buffers for the sies of arrays
-        sizes = np.array((self.mask.shape[0], self.mask.shape[1], self.triangles.shape[0]), dtype=np.uint16)
+        sizes = np.array((self.mask.shape[0], self.mask.shape[1], self.triangles.shape[0], len(self.gradientInfo)), dtype=np.uint16)
         self.sizeBuffer = cl.Buffer(self.ctx, flags = self.mf.READ_ONLY, size = sizes.nbytes)
         cl.enqueue_copy(self.queue, self.sizeBuffer, sizes)
     
@@ -96,14 +96,18 @@ class interpolate_delauny_gpu():
             programSource = f.read()
             
         prg = cl.Program(self.ctx, programSource).build()
-        
-        prg.DelaunyInterpolation(self.queue, (self.triangles.shape[0]), None,\
+        print(self.triangles.shape)
+        prg.DelaunyInterpolation(self.queue, (self.triangles.shape[0],), None,\
             self.triBuffer, self.imageBuffer,\
             self.sizeBuffer, self.gradientInfoBuffer, self.maxMinBuffer)
         
-        self.output = np.zeros((self.resolution[1], self.resolution[0], 4), dtype=np.uint8)
+        self.output = np.zeros(self.mask.shape, dtype=np.uint8)
         cl.enqueue_copy(self.queue, self.output, self.imageBuffer)
-        
+        print(self.triangles, 'wahahaha')
+        for y in range(0, self.mask.shape[0], 10):
+            for x in range(0, self.mask.shape[0], 10):
+                print(self.output[y][x][3], end = ' ')
+            print()
         return self.output
 
 

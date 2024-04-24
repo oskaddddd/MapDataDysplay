@@ -180,38 +180,36 @@ class create_map():
         
         sectionValue = (self.maxMin[1] - self.maxMin[0])/(numSections-1)
         
-        # Draw sections with values and units
+        #Draw sections with values and units
         for i in range(numSections):
-            value = self.maxMin[0]+i*sectionValue
+            value = self.maxMin[0] + i * sectionValue
             
             #Get the text for this section
-            value_text = f'{f"%0.{roundTo}f"%value} {self.settings["units"]}'
+            value_text = f'{f"%0.{roundTo}f" % value} {self.settings["units"]}'
             
             color = (*grad.GetColorAtPoint(value), 255)
             
-            #Calculate the boundries of the bar
+            #Calculate the boundaries of the bar
             yTop = 0
             yBottom = 0
-            if i == 0:
-                yTop = sectionHeight*barScale
-                yBottom = 0
-            else:
-                yBottom = sectionHeight*i
-                yTop = sectionHeight*barScale+yBottom
+
+            yBottom = sectionHeight *( numSections -  i-1)
+            yTop = sectionHeight * barScale + yBottom
                 
             yTop += verticalOffset
             yBottom += verticalOffset
             
-            #Draw the bar and the text next to it
+            # Draw the bar and the text next to it
             xStart = 0 if self.settings['horizontal_alignment'] == 'left' else self.image.size[0] + self.settings['offset']
-            draw.rectangle([(xStart, yBottom), (sectionWidth+xStart, yTop)], fill=color)
-            draw.text((sectionWidth+textOffset+xStart, yBottom), value_text, fill="white", font=font)
-
+            draw.rectangle([(xStart, yBottom), (sectionWidth + xStart, yTop)], fill=color)
+        
+            draw.text((sectionWidth + textOffset + xStart, yBottom), value_text, fill="white", font=font)
+        
             if self.settings['horizontal_alignment'] == 'left':
-                legendImage.paste(image, (legendWidth+textOffset+ self.settings['offset'], 0))
+                legendImage.paste(image, (legendWidth + textOffset + self.settings['offset'], 0))
             else:
                 legendImage.paste(image, (0, 0))
-
+    
         return legendImage
         
 
