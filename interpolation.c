@@ -106,7 +106,7 @@ kernel void DelaunyInterpolation(global int *triangles, global unsigned char *ma
                 float val = (tri[8] * a + tri[5] * b + tri[2] * c) / (a + b + c);
 
                 //Do gradient sruff
-                val = val-maxMin[0]/valueRange;
+                val = (val-maxMin[0])/valueRange;
 
                 for (int gradI = 0; gradI<sizes[3]; gradI++){
                     if (gradientInfo[gradI*4+1] <= val && val <= gradientInfo[gradI*4+5]){
