@@ -103,11 +103,7 @@ class interpolate_delauny_gpu():
         
         self.output = np.zeros(self.mask.shape, dtype=np.uint8)
         cl.enqueue_copy(self.queue, self.output, self.imageBuffer)
-        print(self.triangles, 'wahahaha')
-        for y in range(0, self.mask.shape[0], 10):
-            for x in range(0, self.mask.shape[0], 10):
-                print(self.output[y][x][3], end = ' ')
-            print()
+
         return self.output
 
 

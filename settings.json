@@ -1,7 +1,7 @@
 {
     "image_name": "mask.png",
     "mode": 1,
-    "create_legend": true,
+    "create_legend": false,
     "vertical_position": 0.6,
     "horizontal_alignment": "right",
     "offset": 0,
@@ -12,7 +12,7 @@
     "bar_scale": 0.7,
     "bar_width": 2.5,
     "units": "m/s",
-    "computation": "cpu",
+    "computation": "opencl",
     "SectionMap": false,
     "interpolation": "delauny",
     "manual_max_min": false,
@@ -33,7 +33,7 @@
             ]
         },
         {
-            "position": 0.5,
+            "position": 0.25,
             "color": [
                 255,
                 255,
@@ -41,11 +41,27 @@
             ]
         },
         {
-            "position": 1,
+            "position": 5,
             "color": [
                 0,
                 255,
                 0
+            ]
+        },
+        {
+            "position": 0.75,
+            "color": [
+                0,
+                255,
+                255
+            ]
+        },
+        {
+            "position": 1,
+            "color": [
+                0,
+                0,
+                255
             ]
         }
     ],
@@ -56,8 +72,8 @@
                 25.524120352340073
             ],
             "pixel": [
-                495.0,
-                426.0
+                1919.0,
+                1078.0
             ]
         },
         {
@@ -66,8 +82,8 @@
                 22.019481699793612
             ],
             "pixel": [
-                115.0,
-                7.0
+                2.0,
+                0.0
             ]
         }
     ]
