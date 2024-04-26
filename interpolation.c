@@ -72,7 +72,7 @@ kernel void DelaunyInterpolation(global int *triangles, global unsigned char *ma
 
     int maskIndex;
 
-    int valueRange = maxMin[1]-maxMin[0];
+    float valueRange = maxMin[1]-maxMin[0];
     //Loop trough both sides of the triangle
     for (int i = 0; i < 2; i++)
     {
@@ -113,7 +113,7 @@ kernel void DelaunyInterpolation(global int *triangles, global unsigned char *ma
                     if ((gradientInfo[gradI*4] <= val) && (val <= gradientInfo[gradI*4+4])){
                         float gradVal = (val-gradientInfo[gradI*4])/(gradientInfo[gradI*4+4] - gradientInfo[gradI*4]);
                         for (int colorI = 0; colorI<3; colorI++){
-                            int color = gradientInfo[gradI*4+colorI+1]+gradVal*(gradientInfo[(gradI+1)*4+colorI+1]- gradientInfo[gradI*4+colorI+1]);
+                            char color = gradientInfo[gradI*4+colorI+1]+gradVal*(gradientInfo[(gradI+1)*4+colorI+1]- gradientInfo[gradI*4+colorI+1]);
                             mask[maskIndex+colorI] = color;
                         }
                          

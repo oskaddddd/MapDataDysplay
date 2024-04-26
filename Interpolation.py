@@ -172,7 +172,7 @@ class interpolate_delauny_cpu():
     def Interpolate(self):
 
         #Create the outputs for the output image
-        imageOutput = np.zeros(shape=(self.resolution[1], self.resolution[0], 4), dtype = np.uint8)
+        imageOutput = self.mask#np.zeros(shape=(self.resolution[1], self.resolution[0], 4), dtype = np.uint8)
         
         grad = gradient((self.minVal, self.maxVal), ReadSettings.Settings()["gradient"])
 
@@ -214,7 +214,9 @@ class interpolate_delauny_cpu():
 
         #Loop trought the triangles and calculate the values of each pixel in them
         for triangle in self.triangles:
-
+            #DELETE LATER
+            imageOutput[middle(0, triangle[0][1], imageOutput.shape[0]-1)][middle(0, triangle[0][0], imageOutput.shape[1]-1)] = np.array([255, 0, 0, 255])
+            continue
             #Sort the triangle by its X coordinate in ascending order
             triangle = triangle[triangle[:, 0].argsort()][::1]
 
