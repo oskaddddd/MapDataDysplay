@@ -39,7 +39,7 @@ else:
     ran = [13, 60]
     cy = [int(cy[0]*10**10), int(cy[1]*10**10)]
     cx = [int(cx[0]*10**10), int(cx[1]*10**10)]
-    noise = PerlinNoise(octaves=1, seed=random.randrange(100, 100000))
+    noise = PerlinNoise(octaves=4, seed=random.randrange(100, 100000))
     x = 1
     for _ in range(n):
         

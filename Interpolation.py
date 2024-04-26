@@ -103,7 +103,7 @@ class interpolate_delauny_gpu():
         
         self.output = np.zeros(self.mask.shape, dtype=np.uint8)
         cl.enqueue_copy(self.queue, self.output, self.imageBuffer)
-
+        print(self.output)
         return self.output
 
 
@@ -215,8 +215,8 @@ class interpolate_delauny_cpu():
         #Loop trought the triangles and calculate the values of each pixel in them
         for triangle in self.triangles:
             #DELETE LATER
-            imageOutput[middle(0, triangle[0][1], imageOutput.shape[0]-1)][middle(0, triangle[0][0], imageOutput.shape[1]-1)] = np.array([255, 0, 0, 255])
-            continue
+            #imageOutput[middle(0, triangle[0][1], imageOutput.shape[0]-1)][middle(0, triangle[0][0], imageOutput.shape[1]-1)] = np.array([255, 0, 0, 255])
+            #continue
             #Sort the triangle by its X coordinate in ascending order
             triangle = triangle[triangle[:, 0].argsort()][::1]
 
