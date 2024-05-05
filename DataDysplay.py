@@ -209,6 +209,7 @@ class create_map():
                 legendImage.paste(image, (legendWidth + textOffset + self.settings['offset'], 0))
             else:
                 legendImage.paste(image, (0, 0))
+            
     
         return legendImage
         
